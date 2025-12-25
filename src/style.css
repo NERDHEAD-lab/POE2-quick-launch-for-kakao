@@ -1,65 +1,134 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap');
+
 body {
   width: 320px;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: 'Noto Sans KR', 'Malgun Gothic', sans-serif;
   padding: 16px;
-  background-color: #f5f5f5;
-  color: #333;
+  background-color: #0c150c;
+  background-image: url('assets/bg-forest.webp');
+  background-size: cover;
+  background-position: center top;
+  background-repeat: no-repeat;
+  color: #c8c8c8;
   margin: 0;
+  overflow: hidden;
 }
 
 #app {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 6px;
 }
 
-h1 {
-  font-size: 18px;
-  margin: 0 0 8px 0;
-  text-align: center;
-  color: #222;
+/* Main Logo */
+.logo {
+  display: block;
+  width: 150px;
+  margin: 0 auto;
+  pointer-events: none;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.8));
 }
 
-.control-group {
-  background: white;
-  padding: 12px;
-  border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+/* Sub Logo (Season) */
+.logo-sub {
+  display: block;
+  width: 270px;
+  /* Modified margins: 
+     -35px (was -45px) -> Pushes it down, creating more space from main logo.
+     2px (was 6px) -> Pulls button closer.
+  */
+  margin: -35px auto 2px auto;
+  pointer-events: none;
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.6));
 }
 
 .action-section {
-  margin-bottom: 4px;
+  /* Added negative margin to pull button even closer as requested */
+  margin-top: -4px;
+  margin-bottom: 8px;
+  position: relative;
+  z-index: 10;
 }
 
-.launch-button {
+/* Game Start Button (Official Style) */
+.main-start__link {
+  display: block;
   width: 100%;
-  background-color: #FEE500;
-  color: #191919;
-  border: none;
-  padding: 14px;
-  border-radius: 8px;
-  font-size: 16px;
-  font-weight: bold;
+  aspect-ratio: 650 / 136;
+  background-image: url('assets/btn-game-start.png');
+  background-repeat: no-repeat;
+  background-position: center top;
+  background-size: 100% auto;
+  position: relative;
   cursor: pointer;
-  transition: background-color 0.2s;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border: none;
+  background-color: transparent;
+  transform: translateZ(0);
 }
 
-.launch-button:hover {
-  background-color: #fdd835;
+.main-start__link .hover-overlay {
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: url('assets/btn-game-start.png');
+  background-repeat: no-repeat;
+  background-position: center bottom;
+  background-size: 100% auto;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  will-change: opacity;
 }
 
-.launch-button:active {
-  transform: translateY(1px);
+.main-start__link:hover .hover-overlay {
+  opacity: 1;
+}
+
+.text-blind {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+
+/* Controls Container */
+.control-group {
+  background: rgba(10, 20, 15, 0.85);
+  padding: 12px 16px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  backdrop-filter: blur(4px);
+  transition: border-color 0.2s;
+}
+
+.control-group:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.label-text {
+  font-size: 14px;
+  font-weight: 500;
+  color: #e0e0e0;
+  letter-spacing: -0.02em;
 }
 
 .description {
   font-size: 12px;
-  color: #666;
-  background: rgba(0, 0, 0, 0.03);
-  padding: 8px 12px;
-  border-radius: 6px;
-  line-height: 1.4;
+  color: #aaa;
+  background: rgba(0, 0, 0, 0.6);
+  padding: 10px 12px;
+  border-radius: 4px;
+  line-height: 1.5;
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .description p {
@@ -67,29 +136,18 @@ h1 {
 }
 
 .description code {
-  background: rgba(0, 0, 0, 0.1);
+  background: rgba(255, 255, 255, 0.1);
   padding: 2px 4px;
   border-radius: 3px;
   font-family: monospace;
+  color: #9cdb43;
 }
 
-.switch-container {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  cursor: pointer;
-}
-
-.label-text {
-  font-size: 14px;
-  font-weight: 500;
-}
-
-/* Toggle Switch CSS */
+/* Switch Styling (Forest Theme) */
 .switch {
   position: relative;
   display: inline-block;
-  width: 40px;
+  width: 44px;
   height: 24px;
 }
 
@@ -106,74 +164,67 @@ h1 {
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: #ccc;
-  transition: .4s;
+  background-color: #444;
+  transition: .3s;
+  border-radius: 24px;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.4);
 }
 
 .slider:before {
   position: absolute;
   content: "";
-  height: 16px;
-  width: 16px;
-  left: 4px;
-  bottom: 4px;
-  background-color: white;
-  transition: .4s;
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: #d0d0d0;
+  transition: .3s;
+  border-radius: 50%;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 input:checked+.slider {
-  background-color: #FEE500;
-  /* Kakao Yellowish */
-}
-
-input:focus+.slider {
-  box-shadow: 0 0 1px #FEE500;
+  background-color: #5dae26;
 }
 
 input:checked+.slider:before {
-  transform: translateX(16px);
+  background-color: #fff;
+  transform: translateX(20px);
 }
 
-.slider.round {
-  border-radius: 24px;
+input:focus+.slider {
+  box-shadow: 0 0 0 2px rgba(93, 174, 38, 0.3);
 }
 
-.slider.round:before {
-  border-radius: 50%;
+/* Red Toggle for Disable Switch */
+.spacer-top {
+  margin-top: 4px;
+}
+
+input:checked+.slider.red {
+  background-color: #b93b3b;
+}
+
+input:focus+.slider.red {
+  box-shadow: 0 0 0 2px rgba(185, 59, 59, 0.3);
 }
 
 .footer {
   text-align: center;
   font-size: 11px;
-  color: #888;
+  color: #8fa;
   margin-top: 8px;
-}
-
-/* Feature: Plugin Disable Switch */
-.spacer-top {
-  margin-top: 10px;
-}
-
-/* Red Toggle for Disable Switch */
-input:checked+.slider.red {
-  background-color: #ff4444;
-  /* Red */
-}
-
-input:focus+.slider.red {
-  box-shadow: 0 0 1px #ff4444;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
 }
 
 /* Grayscale/Disabled Effect */
-body.plugin-disabled .launch-button {
-  background-color: #e0e0e0;
-  color: #a0a0a0;
+body.plugin-disabled .main-start__link {
+  filter: grayscale(100%) brightness(0.4);
   cursor: not-allowed;
-  box-shadow: none;
 }
 
 body.plugin-disabled .control-group:not(.always-active) {
-  opacity: 0.6;
+  opacity: 0.4;
   pointer-events: none;
   filter: grayscale(100%);
 }

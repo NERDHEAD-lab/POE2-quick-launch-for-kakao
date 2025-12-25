@@ -1,5 +1,5 @@
 // DOM Elements
-const launchBtn = document.getElementById('launchBtn') as HTMLButtonElement;
+const launchBtn = document.getElementById('launchBtn') as HTMLElement;
 const closeTabCheckbox = document.getElementById('closeTabEnabled') as HTMLInputElement;
 const autoClosePopupCheckbox = document.getElementById('autoClosePopup') as HTMLInputElement;
 const pluginDisabledCheckbox = document.getElementById('pluginDisabled') as HTMLInputElement;
