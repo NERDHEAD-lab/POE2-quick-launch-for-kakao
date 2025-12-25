@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "zip": "bestzip poe2-quick-launch-for-kakao.zip dist/"
+    "zip": "npm run build && bestzip poe2-quick-launch-for-kakao.zip dist/"
   },
   "devDependencies": {
     "@crxjs/vite-plugin": "^2.0.0-beta.28",
