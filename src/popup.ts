@@ -1,63 +1,80 @@
-// DOM Elements
-const launchBtn = document.getElementById('launchBtn') as HTMLElement;
-const closeTabCheckbox = document.getElementById('closeTabEnabled') as HTMLInputElement;
-const autoClosePopupCheckbox = document.getElementById('autoClosePopup') as HTMLInputElement;
-const pluginDisabledCheckbox = document.getElementById('pluginDisabled') as HTMLInputElement;
+// popup.ts
 
-// Storage Keys
-const KEY_CLOSE_TAB = 'closeTabEnabled';
-const KEY_CLOSE_POPUP = 'closePopupEnabled';
-const KEY_PLUGIN_DISABLED = 'pluginDisabled';
+// Type assertions for stronger typing
+const closeTabToggle = document.getElementById('closeTabToggle') as HTMLInputElement;
+const closePopupToggle = document.getElementById('closePopupToggle') as HTMLInputElement;
+const pluginDisableToggle = document.getElementById('pluginDisableToggle') as HTMLInputElement;
+const launchBtn = document.getElementById('launchBtn') as HTMLAnchorElement;
+const settingsToggle = document.getElementById('settingsToggle') as HTMLElement;
+const settingsContent = document.getElementById('settingsContent') as HTMLElement;
 
-// Load settings
-chrome.storage.local.get([KEY_CLOSE_TAB, KEY_CLOSE_POPUP, KEY_PLUGIN_DISABLED], (result) => {
-    if (closeTabCheckbox) {
-        closeTabCheckbox.checked = result[KEY_CLOSE_TAB] === true;
-    }
-    if (autoClosePopupCheckbox) {
-        autoClosePopupCheckbox.checked = result[KEY_CLOSE_POPUP] === true;
-    }
-    if (pluginDisabledCheckbox) {
-        const isDisabled = result[KEY_PLUGIN_DISABLED] === true;
-        pluginDisabledCheckbox.checked = isDisabled;
-        updateDisabledState(isDisabled);
-    }
+// Load saved settings
+chrome.storage.local.get(['closeTab', 'closePopup', 'isPluginDisabled'], (result) => {
+    closeTabToggle.checked = result.closeTab !== false; // Default true
+    closePopupToggle.checked = result.closePopup !== false; // Default true
+
+    // Plugin Disable State
+    const isPluginDisabled = result.isPluginDisabled === true;
+    pluginDisableToggle.checked = isPluginDisabled;
+    updatePluginDisabledState(isPluginDisabled);
 });
 
-// Helper to update UI state
-function updateDisabledState(disabled: boolean) {
-    if (disabled) {
+// Settings Toggle Logic
+if (settingsToggle && settingsContent) {
+    settingsToggle.addEventListener('click', () => {
+        const isOpen = settingsContent.classList.toggle('open');
+        settingsToggle.classList.toggle('active', isOpen);
+    });
+}
+
+// Save settings on change
+closeTabToggle.addEventListener('change', () => {
+    chrome.storage.local.set({ closeTab: closeTabToggle.checked });
+});
+
+closePopupToggle.addEventListener('change', () => {
+    chrome.storage.local.set({ closePopup: closePopupToggle.checked });
+});
+
+// Plugin Disable Toggle Logic
+pluginDisableToggle.addEventListener('change', () => {
+    const isDisabled = pluginDisableToggle.checked;
+    chrome.storage.local.set({ isPluginDisabled: isDisabled });
+    updatePluginDisabledState(isDisabled);
+});
+
+function updatePluginDisabledState(isDisabled: boolean) {
+    if (isDisabled) {
         document.body.classList.add('plugin-disabled');
+        launchBtn.style.pointerEvents = 'none'; // Disable link click
+        launchBtn.removeAttribute('href');
     } else {
         document.body.classList.remove('plugin-disabled');
+        launchBtn.style.pointerEvents = 'auto';
+        launchBtn.href = '#'; // Restore href
     }
 }
 
-// Save settings
-if (closeTabCheckbox) {
-    closeTabCheckbox.addEventListener('change', () => {
-        chrome.storage.local.set({ [KEY_CLOSE_TAB]: closeTabCheckbox.checked });
-    });
-}
+// Launch Game Button Logic
+launchBtn.addEventListener('click', (e) => {
+    e.preventDefault();
 
-if (autoClosePopupCheckbox) {
-    autoClosePopupCheckbox.addEventListener('change', () => {
-        chrome.storage.local.set({ [KEY_CLOSE_POPUP]: autoClosePopupCheckbox.checked });
-    });
-}
+    if (document.body.classList.contains('plugin-disabled')) {
+        return; // Do nothing if disabled
+    }
 
-if (pluginDisabledCheckbox) {
-    pluginDisabledCheckbox.addEventListener('change', () => {
-        const disabled = pluginDisabledCheckbox.checked;
-        updateDisabledState(disabled);
-        chrome.storage.local.set({ [KEY_PLUGIN_DISABLED]: disabled });
-    });
-}
+    // 1. Get Settings
+    // Removed unused isCloseTabFn
+    const isClosePopupFn = closePopupToggle.checked;
 
-// Launch Button Logic
-if (launchBtn) {
-    launchBtn.addEventListener('click', () => {
-        if (pluginDisabledCheckbox && pluginDisabledCheckbox.checked) return;
-        chrome.tabs.create({ url: 'https://pathofexile2.game.daum.net/main#autoStart' });
+    chrome.tabs.create({ url: 'https://pathofexile2.game.daum.net/main#autoStart' }, (tab) => {
+        if (tab && tab.id) {
+            // Logic handled by content scripts
+        }
     });
-}
+
+    // Handle "Close Popup" immediately if requested
+    if (isClosePopupFn) {
+        window.close();
+    }
+});

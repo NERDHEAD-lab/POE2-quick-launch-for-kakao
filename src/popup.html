@@ -4,8 +4,9 @@
 <head>
   <meta charset="UTF-8">
   <title>POE2 빠른 실행 (Kakao)</title>
+  <link rel="stylesheet" href="frame.css">
   <link rel="stylesheet" href="style.css">
-  <script src="popup.js" defer></script>
+  <script src="popup.ts" type="module"></script>
 </head>
 
 <body>
@@ -31,40 +32,54 @@
         </a>
       </div>
 
-      <div class="control-group">
-        <span class="label-text">자동 실행 후 탭 닫기</span>
-        <label class="switch">
-          <input type="checkbox" id="closeTabToggle" />
-          <span class="slider round"></span>
-        </label>
+      <!-- Settings Header Toggle -->
+      <div id="settingsToggle" class="settings-header">
+        <svg class="icon-settings" viewBox="0 0 24 24" fill="currentColor">
+          <path
+            d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84a.484.484 0 0 0-.48.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.488.488 0 0 0-.59.22L2.05 8.87a.49.49 0 0 0 .12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.48-.41l.36-2.54c.59-.24 1.13-.57 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32a.49.49 0 0 0-.12-.61l-2.03-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z" />
+        </svg>
+        <span class="settings-label">설정</span>
+        <span class="arrow-indicator">▼</span>
       </div>
 
-      <div class="control-group">
-        <span class="label-text">항상 팝업 닫기</span>
-        <label class="switch">
-          <input type="checkbox" id="closePopupToggle" />
-          <span class="slider round"></span>
-        </label>
-      </div>
+      <!-- Collapsible Settings Content -->
+      <div id="settingsContent" class="settings-content">
+        <div class="control-group">
+          <span class="label-text">자동 실행 후 탭 닫기</span>
+          <label class="switch">
+            <input type="checkbox" id="closeTabToggle" />
+            <span class="slider round"></span>
+          </label>
+        </div>
 
-      <div class="control-group" id="pluginDisableGroup">
-        <span class="label-text">플러그인 비활성화 (OFF)</span>
-        <label class="switch">
-          <input type="checkbox" id="pluginDisableToggle" />
-          <span class="slider round red"></span>
-        </label>
-      </div>
+        <div class="control-group">
+          <span class="label-text">항상 팝업 닫기</span>
+          <label class="switch">
+            <input type="checkbox" id="closePopupToggle" />
+            <span class="slider round"></span>
+          </label>
+        </div>
 
-      <div class="description spacer-top">
-        <p>
-          * 위 버튼을 누르거나, POE2 홈페이지 URL 뒤에
-          <code>#autoStart</code> 를 붙여 접속하면 자동 실행이 시작됩니다.
-        </p>
+        <div class="control-group" id="pluginDisableGroup">
+          <span class="label-text">플러그인 비활성화 (OFF)</span>
+          <label class="switch">
+            <input type="checkbox" id="pluginDisableToggle" />
+            <span class="slider round red"></span>
+          </label>
+        </div>
       </div>
 
       <!-- Footer Section -->
 
-      <!-- 1. Company Logos (Moved Above Banner) -->
+      <!-- Relocated Description -->
+      <div class="description spacer-top">
+        <p>
+          * <strong>게임 시작</strong>을 누르거나, POE2 홈페이지 URL 뒤에
+          <code>#autoStart</code> 를 붙여 접속하면 자동 실행이 시작됩니다.
+        </p>
+      </div>
+
+      <!-- 1. Company Logos (Tucked behind banner) -->
       <div class="company-logos">
         <img src="assets/img-ci-kakaogames_158x28.png" class="ci-kakao" alt="Kakao Games" />
         <span class="ci-divider"></span>

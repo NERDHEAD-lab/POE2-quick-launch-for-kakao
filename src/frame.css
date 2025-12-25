@@ -1,0 +1,65 @@
+/* Gothic Frame Decorations - Isolated */
+.frame-decoration {
+    position: absolute;
+    top: 0;
+    z-index: 50;
+    pointer-events: none;
+}
+
+.top-left {
+    left: 0;
+    width: 130px;
+    height: 130px;
+    background-image: url('assets/frame-top-left.webp');
+    background-repeat: no-repeat;
+    background-size: contain;
+    background-position: top left;
+}
+
+.top-right {
+    right: 0;
+    width: 130px;
+    height: 130px;
+    background-image: url('assets/frame-top-right.webp');
+    background-repeat: no-repeat;
+    background-size: contain;
+    background-position: top right;
+}
+
+.top-center {
+    left: 50%;
+    transform: translateX(-50%);
+    top: 0;
+    width: 260px;
+    height: 60px;
+    background-image: url('assets/frame-top-center.webp');
+    background-repeat: no-repeat;
+    background-size: contain;
+    background-position: top center;
+}
+
+/* Side Borders */
+.frame-border {
+    position: absolute;
+    width: 100vh;
+    height: 14px;
+    z-index: 40;
+    background-image: url('assets/frame-tile.webp');
+    background-repeat: repeat-x;
+    background-size: auto 100%;
+    pointer-events: none;
+}
+
+.border-left {
+    top: 0;
+    left: 14px;
+    transform: rotate(90deg);
+    transform-origin: top left;
+}
+
+.border-right {
+    top: 0;
+    right: 14px;
+    transform: rotate(-90deg);
+    transform-origin: top right;
+}

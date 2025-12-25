@@ -2,6 +2,7 @@
 
 body {
   width: 380px;
+  height: 580px;
   font-family: 'Noto Sans KR', 'Malgun Gothic', sans-serif;
   padding: 0;
   background-color: #0c150c;
@@ -22,67 +23,6 @@ body {
   height: 100%;
 }
 
-/* --- Gothic Frame Decorations --- */
-.frame-decoration {
-  position: absolute;
-  top: 0;
-  z-index: 50;
-  pointer-events: none;
-}
-
-.top-left {
-  left: 0;
-  width: 130px;
-  height: 130px;
-  background: url('assets/frame-top-left.webp') no-repeat;
-  background-size: contain;
-}
-
-.top-right {
-  right: 0;
-  width: 130px;
-  height: 130px;
-  background: url('assets/frame-top-right.webp') no-repeat;
-  background-size: contain;
-  background-position: top right;
-}
-
-.top-center {
-  left: 50%;
-  transform: translateX(-50%);
-  top: 0;
-  width: 260px;
-  height: 60px;
-  background: url('assets/frame-top-center.webp') no-repeat center top;
-  background-size: contain;
-}
-
-/* --- Side Borders --- */
-.frame-border {
-  position: absolute;
-  width: 100vh;
-  height: 14px;
-  z-index: 40;
-  background-image: url('assets/frame-tile.webp');
-  background-repeat: repeat-x;
-  background-size: auto 100%;
-  pointer-events: none;
-}
-
-.border-left {
-  top: 0;
-  left: 14px;
-  transform: rotate(90deg);
-  transform-origin: top left;
-}
-
-.border-right {
-  top: 0;
-  right: 14px;
-  transform: rotate(-90deg);
-  transform-origin: top right;
-}
-
 /* --- Content Wrapper --- */
 .content-wrapper {
   padding: 32px 12px 0 12px;
@@ -91,9 +31,10 @@ body {
   gap: 6px;
   position: relative;
   z-index: 20;
+  height: 100%;
 }
 
-/* Main Logo */
+/* Logos */
 .logo {
   display: block;
   width: 140px;
@@ -102,7 +43,6 @@ body {
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.8));
 }
 
-/* Sub Logo (Season) */
 .logo-sub {
   display: block;
   width: 250px;
@@ -147,7 +87,6 @@ body {
   background-size: 100% auto;
   opacity: 0;
   transition: opacity 0.3s ease;
-  will-change: opacity;
 }
 
 .main-start__link:hover .hover-overlay {
@@ -164,18 +103,137 @@ body {
   white-space: nowrap;
 }
 
-/* Controls Container */
+/* --- Settings Menu (Drawer Style) --- */
+
+/* Header: The Handle */
+.settings-header {
+  position: absolute;
+  /* Start Position (Closed) */
+  bottom: 135px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 70;
+  /* Highest z-index to sit on top of everything */
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 12px;
+  cursor: pointer;
+  color: #dfcf99;
+  font-size: 14px;
+  font-weight: 500;
+
+  /* Animate 'bottom' property */
+  transition: bottom 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  user-select: none;
+  opacity: 0.8;
+  width: max-content;
+}
+
+.settings-header:hover {
+  opacity: 1;
+  text-shadow: 0 0 5px rgba(223, 207, 153, 0.4);
+}
+
+.settings-header.active {
+  /* Move UP when active */
+  bottom: 265px;
+  color: #fff;
+  text-shadow: 0 0 8px rgba(223, 207, 153, 0.6);
+}
+
+.icon-settings {
+  width: 16px;
+  height: 16px;
+  fill: currentColor;
+}
+
+.arrow-indicator {
+  font-size: 10px;
+  margin-top: 2px;
+  transition: transform 0.2s;
+}
+
+.settings-header.active .arrow-indicator {
+  transform: rotate(180deg);
+}
+
+/* Settings Content: The Drawer */
+.settings-content {
+  position: absolute;
+  /* Fixed Anchor at bottom of drawer area */
+  bottom: 135px;
+  left: 50%;
+  transform: translateX(-50%);
+
+  /* Widen to 340px */
+  width: 340px;
+  z-index: 60;
+  /* Above frames */
+
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  /* Animation State */
+  height: 0;
+  /* Grow height */
+  opacity: 0;
+  overflow-y: hidden;
+  overflow-x: hidden;
+
+  transition:
+    height 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    opacity 0.2s ease;
+
+  background: rgba(0, 0, 0, 0.9);
+  border-radius: 4px;
+  border: 1px solid rgba(223, 207, 153, 0.2);
+  /* Hide border when closed to avoid thin line */
+  border-color: transparent;
+}
+
+.settings-content.open {
+  height: 125px;
+  /* Fill space */
+  opacity: 1;
+  overflow-y: auto;
+  padding: 4px;
+  border-color: rgba(223, 207, 153, 0.2);
+}
+
+/* Thin Scrollbar Styling */
+.settings-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.settings-content::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 3px;
+  margin: 4px 0;
+}
+
+.settings-content::-webkit-scrollbar-thumb {
+  background: #7a6e5d;
+  border-radius: 3px;
+}
+
+.settings-content::-webkit-scrollbar-thumb:hover {
+  background: #dfcf99;
+}
+
+/* Controls */
 .control-group {
-  background: rgba(10, 20, 15, 0.85);
+  background: rgba(30, 35, 30, 0.6);
   padding: 10px 14px;
   border-radius: 4px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.05);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  backdrop-filter: blur(4px);
-  transition: border-color 0.2s;
+  flex-shrink: 0;
 }
 
 .control-group:hover {
@@ -189,6 +247,7 @@ body {
   letter-spacing: -0.02em;
 }
 
+/* Description Text */
 .description {
   font-size: 11px;
   color: #aaa;
@@ -197,7 +256,15 @@ body {
   border-radius: 4px;
   line-height: 1.4;
   border: 1px solid rgba(255, 255, 255, 0.05);
-  margin-bottom: 0px;
+
+  position: absolute;
+  bottom: 85px;
+  left: 12px;
+  width: calc(100% - 24px);
+  margin: 0;
+  box-sizing: border-box;
+  text-align: center;
+  z-index: 25;
 }
 
 .description p {
@@ -212,7 +279,7 @@ body {
   color: #9cdb43;
 }
 
-/* Switch Styling */
+/* Switch */
 .switch {
   position: relative;
   display: inline-block;
@@ -265,7 +332,6 @@ input:focus+.slider {
   box-shadow: 0 0 0 2px rgba(93, 174, 38, 0.3);
 }
 
-/* Red Toggle */
 .spacer-top {
   margin-top: 4px;
 }
@@ -284,12 +350,13 @@ input:focus+.slider.red {
   justify-content: center;
   align-items: center;
   gap: 12px;
-  padding: 40px 0 8px 0;
-  margin: 0 -12px -24px -12px;
+  padding: 40px 0 10px 0;
   background: linear-gradient(to bottom, transparent, rgba(0, 0, 0, 1) 90%);
-  position: relative;
+  position: absolute;
+  bottom: 25px;
+  left: 0;
+  width: 100%;
   z-index: 15;
-  border-top: none;
 }
 
 .ci-kakao {
@@ -312,18 +379,19 @@ input:focus+.slider.red {
 
 /* Credits Banner */
 .credits-banner {
-  position: relative;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 60px;
   z-index: 20;
   display: flex;
   justify-content: center;
   align-items: center;
-  margin: 0 -12px;
-  height: 60px;
   background-image: url('assets/banner-bottom.webp');
   background-size: cover;
   background-position: center;
-  /* Removed border-top preventing visual artifact */
-  border-top: none;
+  background-repeat: no-repeat;
 }
 
 .credits-text {
@@ -337,7 +405,6 @@ input:focus+.slider.red {
   margin-top: 32px;
 }
 
-/* Disabled State */
 body.plugin-disabled .main-start__link {
   filter: grayscale(100%) brightness(0.4);
   cursor: not-allowed;

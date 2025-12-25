@@ -1,8 +1,8 @@
-// Storage Keys
-const KEY_AUTO_START = 'autoStartEnabled';
-const KEY_CLOSE_TAB = 'closeTabEnabled';
-const KEY_CLOSE_POPUP = 'closePopupEnabled';
-const KEY_PLUGIN_DISABLED = 'pluginDisabled';
+// Storage Keys (Must match popup.ts)
+const KEY_AUTO_START = 'autoStartEnabled'; // Unused legacy?
+const KEY_CLOSE_TAB = 'closeTab';
+const KEY_CLOSE_POPUP = 'closePopup';
+const KEY_PLUGIN_DISABLED = 'isPluginDisabled';
 
 interface PageSettings {
     isAutoStartEnabled: boolean;
@@ -17,8 +17,12 @@ console.log('POE2 Quick Launch Content Script Loaded');
 chrome.storage.local.get([KEY_AUTO_START, KEY_CLOSE_TAB, KEY_CLOSE_POPUP, KEY_PLUGIN_DISABLED], (result) => {
     const settings: PageSettings = {
         isAutoStartEnabled: result[KEY_AUTO_START] === true,
-        isCloseTabEnabled: result[KEY_CLOSE_TAB] === true,
-        isClosePopupEnabled: result[KEY_CLOSE_POPUP] === true,
+        // Match popup.ts logic: Default to TRUE if undefined (unless explicitly false)
+        // Actually popup.ts defaults to true. content.ts should probably respect that default or just read truthiness?
+        // popup.ts: result.closeTab !== false.
+
+        isCloseTabEnabled: result[KEY_CLOSE_TAB] !== false,
+        isClosePopupEnabled: result[KEY_CLOSE_POPUP] !== false,
         isPluginDisabled: result[KEY_PLUGIN_DISABLED] === true
     };
 
@@ -33,8 +37,8 @@ window.addEventListener('hashchange', () => {
         chrome.storage.local.get([KEY_AUTO_START, KEY_CLOSE_TAB, KEY_CLOSE_POPUP, KEY_PLUGIN_DISABLED], (result) => {
             const currentSettings: PageSettings = {
                 isAutoStartEnabled: result[KEY_AUTO_START] === true,
-                isCloseTabEnabled: result[KEY_CLOSE_TAB] === true,
-                isClosePopupEnabled: result[KEY_CLOSE_POPUP] === true,
+                isCloseTabEnabled: result[KEY_CLOSE_TAB] !== false,
+                isClosePopupEnabled: result[KEY_CLOSE_POPUP] !== false,
                 isPluginDisabled: result[KEY_PLUGIN_DISABLED] === true
             };
 
@@ -81,18 +85,19 @@ function dispatchPageLogic(settings: PageSettings) {
 function handleMainPage(settings: PageSettings) {
     console.log('Page Type: MAIN');
 
-    if (settings.isClosePopupEnabled) {
-        handleTodayClose();
+    const shouldDismissToday = settings.isClosePopupEnabled;
+    const isAutoStart = window.location.hash.includes('#autoStart');
+
+    // If "Always Close Popup" is on, OR we need to clear obstacles for Auto Start:
+    // We launch the modal manager.
+    if (shouldDismissToday || isAutoStart) {
+        manageIntroModal(shouldDismissToday);
     }
 
-    if (window.location.hash.includes('#autoStart')) {
+    if (isAutoStart) {
         console.log('Auto Start triggered on Homepage.');
         // Delegate session storage write to Background Script (to avoid Access Denied errors)
-        console.log('Requesting Background to set Auto Sequence flag...');
         chrome.runtime.sendMessage({ action: 'setAutoSequence', value: true });
-
-        // Ensure modal is closed (Fallback for Auto Start)
-        ensureModalClosed();
 
         // Start Game Launch Polling
         startPolling(settings);
@@ -206,13 +211,30 @@ function handleLauncherPage(settings: PageSettings) {
 
 function startPolling(settings: PageSettings) {
     let attempts = 0;
+    let modalWaitCount = 0;
     const maxAttempts = 15; // 15 seconds (approx)
 
     const interval = setInterval(() => {
-        // Safety: Pause if page lost focus (likely popup opened)
+        // Safety: Pause if page lost focus
         if (!document.hasFocus()) {
-            console.log('Page lost focus (popup opened?), skipping click this tick.');
+            console.log('Page lost focus, skipping click this tick.');
             return;
+        }
+
+        // 1. Modal Blocker Check (with Timeout)
+        if (modalWaitCount < 3) {
+            const visibleModal = Array.from(document.querySelectorAll('.modal__container')).find(
+                el => (el as HTMLElement).offsetParent !== null
+            );
+
+            if (visibleModal) {
+                console.log(`Intro Modal detected. Waiting... (${modalWaitCount + 1}/3)`);
+                modalWaitCount++;
+                return; // Skip this tick
+            }
+        } else if (modalWaitCount === 3) {
+            console.log('Modal wait timeout exceeded. Bypassing check...');
+            modalWaitCount++;
         }
 
         attempts++;
@@ -226,10 +248,12 @@ function startPolling(settings: PageSettings) {
             console.log('Start Button clicked. Stopping polling immediately.');
             clearInterval(interval);
 
-            // Send signal to background to ensure cleanup happens (Robustness for partial launcher loads)
-            console.log('Sending game start signal from Main Page to ensure cleanup...');
+            // Send signal to background
+            console.log('Sending game start signal from Main Page...');
             chrome.runtime.sendMessage({
                 action: 'launcherGameStartClicked',
+                // CRITICAL FIX: Only close tab if explicitly requested by 'Close Tab' setting
+                // 'Always Close Popup' affects the modal, NOT the tab.
                 shouldCloseMainPage: settings.isCloseTabEnabled
             }, () => {
                 const err = chrome.runtime.lastError;
@@ -249,91 +273,59 @@ function startPolling(settings: PageSettings) {
     }, 1000);
 }
 
-function handleTodayClose() {
-    console.log('Handling "Always Close Popup" (Today Close)...');
+function manageIntroModal(preferTodayClose: boolean) {
+    console.log(`Managing Intro Modal. Prefer 'Today Close': ${preferTodayClose}`);
 
-    try {
-        if (!document.cookie.includes('POE2_INTRO_MODAL=1')) {
-            console.log('Setting POE2_INTRO_MODAL cookie to prevent modal...');
-            document.cookie = "POE2_INTRO_MODAL=1; path=/; max-age=86400";
+    // 1. Cookie Pre-emptive Strike
+    if (preferTodayClose) {
+        try {
+            if (!document.cookie.includes('POE2_INTRO_MODAL=1')) {
+                document.cookie = "POE2_INTRO_MODAL=1; path=/; max-age=86400";
+                console.log('Set POE2_INTRO_MODAL=1 cookie.');
+            }
+        } catch (e) {
+            console.warn('Cookie write failed:', e);
         }
-    } catch (e) {
-        console.warn('Failed to set cookie:', e);
     }
 
-    const tryClose = () => {
-        const introContent = document.getElementById('kgIntroModalContents');
-        if (introContent) {
-            const container = introContent.closest('.modal__container');
-            if (container) {
-                const todayBtn = container.querySelector('.modal__button-block') as HTMLElement;
+    const dismissAttempt = () => {
+        // Broaden search: Any visible modal container
+        const containers = document.querySelectorAll('.modal__container');
+        if (containers.length === 0) return false;
+
+        for (const container of containers) {
+            // Check visibility (heuristic)
+            if ((container as HTMLElement).offsetParent === null) continue;
+
+            // Strategy A: "Today Close" Logic (Priority)
+            if (preferTodayClose) {
+                const todayBtn = container.querySelector('.modal__button-block');
                 if (todayBtn) {
-                    console.log('Found Intro Modal "Today Close" button, clicking...');
-                    safeClick(todayBtn);
+                    console.log('Found "Today Close" button (.modal__button-block). Clicking...');
+                    safeClick(todayBtn as HTMLElement);
                     return true;
+                } else {
+                    console.log('"Today Close" preferred but button not found. Falling back to X button...');
                 }
+            }
+
+            // Strategy B: Click "X" (Fallback or Default)
+            const closeBtn = container.querySelector('.modal__button-x');
+            if (closeBtn) {
+                console.log('Found "Close" button (.modal__button-x). Clicking...');
+                safeClick(closeBtn as HTMLElement);
+                return true;
             }
         }
         return false;
     };
 
-    if (tryClose()) return;
+    if (dismissAttempt()) return;
 
     const interval = setInterval(() => {
-        if (tryClose()) clearInterval(interval);
-    }, 500);
-
-    setTimeout(() => clearInterval(interval), 10000);
-}
-
-function ensureModalClosed() {
-    const tryClose = () => {
-        console.log('AutoStart: Attempting to close Intro Modal...');
-
-        const introContent = document.getElementById('kgIntroModalContents');
-
-        if (!introContent) {
-            console.log('Intro modal content (#kgIntroModalContents) not found.');
-            return false;
+        if (dismissAttempt()) {
+            clearInterval(interval);
         }
-
-        const container = introContent.closest('.modal__container');
-        if (!container) {
-            return false;
-        }
-
-        // Prioritize 'X' buttons
-        const closeBtns = container.querySelectorAll('.modal__button-x');
-        if (closeBtns.length > 0) {
-            for (const btn of closeBtns) {
-                const style = window.getComputedStyle(btn);
-                if (style.display !== 'none' && style.visibility !== 'hidden') {
-                    console.log('Clicking visible .modal__button-x...');
-                    safeClick(btn as HTMLElement);
-                    return true;
-                }
-            }
-        }
-
-        // Fallback: search for "닫기" or "Today" buttons
-        const allButtons = container.querySelectorAll('button, a');
-        for (const btn of allButtons) {
-            if (btn.textContent && (btn.textContent.includes('닫기') || btn.textContent.includes('Close'))) {
-                const style = window.getComputedStyle(btn);
-                if (style.display !== 'none' && style.visibility !== 'hidden') {
-                    console.log(`Found text button: "${btn.textContent.trim()}"`);
-                    safeClick(btn as HTMLElement);
-                    return true;
-                }
-            }
-        }
-        return false;
-    };
-
-    if (tryClose()) return;
-
-    const interval = setInterval(() => {
-        if (tryClose()) clearInterval(interval);
     }, 500);
 
     setTimeout(() => clearInterval(interval), 10000);
