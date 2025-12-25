@@ -1,7 +1,6 @@
 // Storage Keys
 const KEY_AUTO_START = 'autoStartEnabled';
 const KEY_CLOSE_TAB = 'closeTabEnabled';
-const KEY_SESSION_AUTO_SEQ = 'isAutoSequence';
 const KEY_CLOSE_POPUP = 'closePopupEnabled';
 
 interface PageSettings {
@@ -21,6 +20,27 @@ chrome.storage.local.get([KEY_AUTO_START, KEY_CLOSE_TAB, KEY_CLOSE_POPUP], (resu
     };
 
     dispatchPageLogic(settings);
+});
+
+// Listen for Hash Changes (e.g. User clicks bookmark with #autoStart while on page)
+window.addEventListener('hashchange', () => {
+    console.log('[Content] Hash changed:', window.location.hash);
+    if (window.location.hash.includes('#autoStart')) {
+        // Re-fetch settings to ensure we use the latest values (User might have toggled options)
+        chrome.storage.local.get([KEY_AUTO_START, KEY_CLOSE_TAB, KEY_CLOSE_POPUP], (result) => {
+            const currentSettings: PageSettings = {
+                isAutoStartEnabled: result[KEY_AUTO_START] === true,
+                isCloseTabEnabled: result[KEY_CLOSE_TAB] === true,
+                isClosePopupEnabled: result[KEY_CLOSE_POPUP] === true
+            };
+
+            // Only trigger if we are on the Main Page
+            if (window.location.pathname.includes('/main')) {
+                console.log('[Content] #autoStart detected via Hash Change. Re-triggering logic with fresh settings.');
+                handleMainPage(currentSettings);
+            }
+        });
+    }
 });
 
 /**
@@ -58,13 +78,15 @@ function handleMainPage(settings: PageSettings) {
 
     if (window.location.hash.includes('#autoStart')) {
         console.log('Auto Start triggered on Homepage.');
-        chrome.storage.session.set({ [KEY_SESSION_AUTO_SEQ]: true });
+        // Delegate session storage write to Background Script (to avoid Access Denied errors)
+        console.log('Requesting Background to set Auto Sequence flag...');
+        chrome.runtime.sendMessage({ action: 'setAutoSequence', value: true });
 
         // Ensure modal is closed (Fallback for Auto Start)
         ensureModalClosed();
 
         // Start Game Launch Polling
-        startPolling();
+        startPolling(settings);
     }
 }
 
@@ -142,16 +164,26 @@ function handleLauncherPage(settings: PageSettings) {
             console.log('Launcher Game Start found. Clicking...');
             safeClick(gameStartBtn as HTMLElement);
 
-            if (settings.isCloseTabEnabled) {
-                console.log('Launcher Game Start clicked. Sending signal to Background IMMEDIATELY...');
-                chrome.runtime.sendMessage({ action: 'launcherGameStartClicked' }, () => {
-                    if (chrome.runtime.lastError) {
-                        console.error('Failed to send message:', chrome.runtime.lastError);
-                    } else {
-                        console.log('Signal sent successfully. Background will handle the 5s delay.');
-                    }
-                });
-            }
+            console.log('Launcher Game Start clicked. Sending signal to Background...');
+
+            // Send signal regardless of Auto Close setting.
+            // The Background script needs to know the task is done so it can:
+            // 1. Close this Launcher tab (always)
+            // 2. Decide whether to Close the Main tab OR Clean its URL (based on the flag)
+            chrome.runtime.sendMessage({
+                action: 'launcherGameStartClicked',
+                shouldCloseMainPage: settings.isCloseTabEnabled
+            }, () => {
+                // We check lastError to prevent Chrome from complaining, but we intentionally ignore it.
+                // The page is closing immediately, so the connection will be severed.
+                // Background script has already received the signal.
+                const err = chrome.runtime.lastError;
+                if (err) {
+                    console.log('Signal sent. (Response lost due to tab close - Expected behavior)');
+                } else {
+                    console.log('Signal sent successfully.');
+                }
+            });
             obs.disconnect();
         }
     });
@@ -163,7 +195,7 @@ function handleLauncherPage(settings: PageSettings) {
 // Helper Functions
 // =============================================================================
 
-function startPolling() {
+function startPolling(settings: PageSettings) {
     let attempts = 0;
     const maxAttempts = 15; // 15 seconds (approx)
 
@@ -184,7 +216,18 @@ function startPolling() {
             // Click strictly ONCE
             console.log('Start Button clicked. Stopping polling immediately.');
             clearInterval(interval);
-            // Main page now waits for 'launcherSessionComplete' signal from background script
+
+            // Send signal to background to ensure cleanup happens (Robustness for partial launcher loads)
+            console.log('Sending game start signal from Main Page to ensure cleanup...');
+            chrome.runtime.sendMessage({
+                action: 'launcherGameStartClicked',
+                shouldCloseMainPage: settings.isCloseTabEnabled
+            }, () => {
+                const err = chrome.runtime.lastError;
+                if (err) console.log('Main Page Signal sent (safely ignored error).');
+                else console.log('Main Page Signal sent successfully.');
+            });
+
             return;
         } else {
             console.log(`[Attempt ${attempts}] Start Button not found yet.`);
@@ -309,5 +352,29 @@ function safeClick(element: HTMLElement) {
 
     element.dispatchEvent(event);
 }
+
+// Global Message Listener (for Main Page actions triggering from Background)
+console.log('Registering cleanupUrl listener...');
+chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
+    if (request.action === 'cleanupUrl') {
+        console.log('[Content] Received cleanup signal. Current Hash:', window.location.hash);
+
+        if (window.location.hash.includes('#autoStart')) {
+            console.log('[Content] Removing #autoStart from URL via replaceState...');
+            history.replaceState(null, '', window.location.pathname + window.location.search);
+
+            // Double-check and force if necessary
+            setTimeout(() => {
+                if (window.location.hash.includes('autoStart')) {
+                    console.log('[Content] replaceState failed? Forcing window.location.hash clear.');
+                    window.location.hash = '';
+                } else {
+                    console.log('[Content] URL Cleanup Confirmed. Hash is clean.');
+                }
+            }, 50);
+        }
+        sendResponse('cleaned');
+    }
+});
 
 export { };
