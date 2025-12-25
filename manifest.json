@@ -1,6 +1,7 @@
 {
     "manifest_version": 3,
     "name": "POE2 빠른 실행 (Kakao)",
+    "description": "Kakao Games POE2 홈페이지 접속 시 게임 자동 실행 및 팝업/탭 자동 닫기 기능 제공",
     "version": "1.0.0",
     "action": {
         "default_popup": "src/popup.html",
@@ -22,7 +23,6 @@
     "content_scripts": [
         {
             "matches": [
-                "<all_urls>",
                 "*://*.game.daum.net/*",
                 "*://*.daum.net/*"
             ],
@@ -32,12 +32,11 @@
         }
     ],
     "host_permissions": [
-        "<all_urls>"
+        "*://*.game.daum.net/*",
+        "*://*.daum.net/*"
     ],
     "permissions": [
         "storage",
-        "activeTab",
-        "scripting",
         "tabs"
     ]
 }
