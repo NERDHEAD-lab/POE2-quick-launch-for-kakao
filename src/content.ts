@@ -143,10 +143,14 @@ function handleLauncherPage(settings: PageSettings) {
             safeClick(gameStartBtn as HTMLElement);
 
             if (settings.isCloseTabEnabled) {
-                console.log('Closing tab per settings...');
-                setTimeout(() => {
-                    chrome.runtime.sendMessage({ action: 'closeTab' });
-                }, 1000);
+                console.log('Launcher Game Start clicked. Sending signal to Background IMMEDIATELY...');
+                chrome.runtime.sendMessage({ action: 'launcherGameStartClicked' }, () => {
+                    if (chrome.runtime.lastError) {
+                        console.error('Failed to send message:', chrome.runtime.lastError);
+                    } else {
+                        console.log('Signal sent successfully. Background will handle the 5s delay.');
+                    }
+                });
             }
             obs.disconnect();
         }
@@ -180,6 +184,7 @@ function startPolling() {
             // Click strictly ONCE
             console.log('Start Button clicked. Stopping polling immediately.');
             clearInterval(interval);
+            // Main page now waits for 'launcherSessionComplete' signal from background script
             return;
         } else {
             console.log(`[Attempt ${attempts}] Start Button not found yet.`);
