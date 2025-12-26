@@ -99,3 +99,24 @@ launchBtn.addEventListener('click', (e) => {
         window.close();
     }
 });
+
+// Load Settings on Startup
+function loadSettings() {
+    chrome.storage.local.get(['closeTab', 'closePopup', 'isPluginDisabled'], (result) => {
+        if (result.closeTab !== undefined) {
+            closeTabToggle.checked = result.closeTab as boolean;
+        }
+        if (result.closePopup !== undefined) {
+            closePopupToggle.checked = result.closePopup as boolean;
+        }
+        if (result.isPluginDisabled !== undefined) {
+            const isDisabled = result.isPluginDisabled as boolean;
+            pluginDisableToggle.checked = isDisabled;
+            // Apply initial visual state
+            updatePluginDisabledState(isDisabled);
+        }
+    });
+}
+
+// Initialize
+document.addEventListener('DOMContentLoaded', loadSettings);
