@@ -103,6 +103,73 @@ body {
   white-space: nowrap;
 }
 
+
+/* Secondary Button (Partial Fix Guide) */
+.sub-link {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 96%;
+  /* Reduced from 100% */
+  height: 34px;
+  /* Increased from 32px for breathing room */
+  margin: 2px auto 0 auto;
+  /* Reduced gap to move closer to Game Start */
+
+  background-image: url('assets/btn-text.png');
+  background-repeat: no-repeat;
+  background-position: center top;
+  /* Normal State: Top half */
+  background-size: 100% 200%;
+  /* Force BG height to be 2x container height */
+  position: relative;
+  cursor: pointer;
+  text-decoration: none;
+  margin-top: 6px;
+
+  /* Text Styles */
+  color: #dfcf99;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+  transition: all 0.2s ease;
+}
+
+.sub-link .hover-overlay {
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: url('assets/btn-text.png');
+  background-repeat: no-repeat;
+  background-position: center bottom;
+  /* Hover State: Bottom half */
+  background-size: 100% 200%;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: 1;
+}
+
+.sub-link:hover .hover-overlay {
+  opacity: 1;
+}
+
+/* Text Layer */
+.sub-link .btn-text {
+  position: relative;
+  z-index: 2;
+  transition: color 0.2s;
+}
+
+.sub-link:hover .btn-text {
+  color: #fff;
+  /* Brighten text on hover */
+  text-shadow: 0 0 5px rgba(223, 207, 153, 0.5);
+}
+
 /* --- Settings Menu (Drawer Style) --- */
 
 /* Header: The Handle */
