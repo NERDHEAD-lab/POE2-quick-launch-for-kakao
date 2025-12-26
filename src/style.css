@@ -206,6 +206,15 @@ body {
   margin-bottom: 4px;
   /* Minimal bottom margin */
   width: 100%;
+
+  /* Link Styles */
+  text-decoration: none;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.logo-container:hover {
+  opacity: 0.9;
 }
 
 /* Logos - Maximize size for horizontal fit */
