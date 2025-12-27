@@ -46,10 +46,10 @@ chrome.runtime.onMessage.addListener((request: MessageRequest, sender, sendRespo
             // 3. Handle Main Page (Close OR Cleanup)
             setTimeout(() => {
                 chrome.tabs.query({ url: "*://*.game.daum.net/*" }, (tabs) => {
-                    const mainPageTabs = tabs.filter(t => t.url && (
-                        t.url.includes('pathofexile2.game.daum.net') ||
-                        t.url.includes('poe.game.daum.net')
-                    ));
+                    const mainPageTabs = tabs.filter(t => t.url &&
+                        (t.url.includes('pathofexile2.game.daum.net') || t.url.includes('poe.game.daum.net')) &&
+                        t.url.includes('#autoStart')
+                    );
                     const tabIds = mainPageTabs.map(t => t.id).filter((id): id is number => id !== undefined);
 
                     if (tabIds.length === 0) {
