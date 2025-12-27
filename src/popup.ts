@@ -1,4 +1,5 @@
 // popup.ts
+import { loadSettings, saveSetting, STORAGE_KEYS, GameType } from './storage';
 
 // Type assertions for stronger typing
 const closeTabToggle = document.getElementById('closeTabToggle') as HTMLInputElement;
@@ -17,8 +18,7 @@ const settingsContent = document.getElementById('settingsContent') as HTMLElemen
 const patchNotesToggle = document.getElementById('patchNotesToggle') as HTMLElement;
 const patchNotesContent = document.getElementById('patchNotesContent') as HTMLElement;
 
-type GameType = 'poe' | 'poe2';
-let selectedGame: GameType = 'poe2'; // Default
+let selectedGame: GameType = 'poe2'; // Default local state, will be updated from storage
 
 // Game Configuration
 const GAME_CONFIG = {
@@ -35,7 +35,7 @@ const GAME_CONFIG = {
 };
 
 function updateGameUI(game: GameType) {
-    selectedGame = game;
+    selectedGame = game; // Update local state
     const config = GAME_CONFIG[game];
 
     // 1. Background
@@ -51,12 +51,12 @@ function updateGameUI(game: GameType) {
         logoPoe2.classList.remove('inactive');
     }
 
-    // 3. Launch Button URL (Stored in dataset or variable for click handler)
+    // 3. Launch Button URL
     launchBtn.dataset.url = config.url;
 
     // 4. Fix Guide Visibility
     if (config.showFixGuide) {
-        fixGuideBtn.style.display = 'flex'; // or whatever flex style used
+        fixGuideBtn.style.display = 'flex';
     } else {
         fixGuideBtn.style.display = 'none';
     }
@@ -103,30 +103,30 @@ if (patchNotesToggle) {
 logoPoe.addEventListener('click', () => {
     if (selectedGame !== 'poe') {
         updateGameUI('poe');
-        chrome.storage.local.set({ selectedGame: 'poe' });
+        saveSetting(STORAGE_KEYS.SELECTED_GAME, 'poe');
     }
 });
 
 logoPoe2.addEventListener('click', () => {
     if (selectedGame !== 'poe2') {
         updateGameUI('poe2');
-        chrome.storage.local.set({ selectedGame: 'poe2' });
+        saveSetting(STORAGE_KEYS.SELECTED_GAME, 'poe2');
     }
 });
 
 // Save settings on change
 closeTabToggle.addEventListener('change', () => {
-    chrome.storage.local.set({ closeTab: closeTabToggle.checked });
+    saveSetting(STORAGE_KEYS.CLOSE_TAB, closeTabToggle.checked);
 });
 
 closePopupToggle.addEventListener('change', () => {
-    chrome.storage.local.set({ closePopup: closePopupToggle.checked });
+    saveSetting(STORAGE_KEYS.CLOSE_POPUP, closePopupToggle.checked);
 });
 
 // Plugin Disable Toggle Logic
 pluginDisableToggle.addEventListener('change', () => {
     const isDisabled = pluginDisableToggle.checked;
-    chrome.storage.local.set({ isPluginDisabled: isDisabled });
+    saveSetting(STORAGE_KEYS.PLUGIN_DISABLED, isDisabled);
     updatePluginDisabledState(isDisabled);
 });
 
@@ -150,8 +150,6 @@ launchBtn.addEventListener('click', (e) => {
         return; // Do nothing if disabled
     }
 
-    // 1. Get Settings
-    // Removed unused isCloseTabFn
     const isClosePopupFn = closePopupToggle.checked;
     const targetUrl = launchBtn.dataset.url || GAME_CONFIG.poe2.url; // Fallback
 
@@ -167,27 +165,16 @@ launchBtn.addEventListener('click', (e) => {
     });
 });
 
-// Load Settings on Startup
-function loadSettings() {
-    chrome.storage.local.get(['closeTab', 'closePopup', 'isPluginDisabled', 'selectedGame'], (result) => {
-        if (result.closeTab !== undefined) {
-            closeTabToggle.checked = result.closeTab as boolean;
-        }
-        if (result.closePopup !== undefined) {
-            closePopupToggle.checked = result.closePopup as boolean;
-        }
-        if (result.isPluginDisabled !== undefined) {
-            const isDisabled = result.isPluginDisabled as boolean;
-            pluginDisableToggle.checked = isDisabled;
-            // Apply initial visual state
-            updatePluginDisabledState(isDisabled);
-        }
+// Initialize Settings
+document.addEventListener('DOMContentLoaded', async () => {
+    const settings = await loadSettings();
 
-        // Load Game State
-        const savedGame = (result.selectedGame as GameType) || 'poe2';
-        updateGameUI(savedGame);
-    });
-}
+    closeTabToggle.checked = settings.closeTab;
+    closePopupToggle.checked = settings.closePopup;
 
-// Initialize
-document.addEventListener('DOMContentLoaded', loadSettings);
+    const isDisabled = settings.isPluginDisabled;
+    pluginDisableToggle.checked = isDisabled;
+    updatePluginDisabledState(isDisabled);
+
+    updateGameUI(settings.selectedGame);
+});

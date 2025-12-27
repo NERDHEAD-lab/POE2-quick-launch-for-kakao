@@ -1,53 +1,27 @@
 import { SELECTORS } from './domSelectors';
-
-// Storage Keys (Must match popup.ts)
-const KEY_AUTO_START = 'autoStartEnabled'; // Unused legacy?
-const KEY_CLOSE_TAB = 'closeTab';
-const KEY_CLOSE_POPUP = 'closePopup';
-const KEY_PLUGIN_DISABLED = 'isPluginDisabled';
-
-interface PageSettings {
-    isAutoStartEnabled: boolean;
-    isCloseTabEnabled: boolean;
-    isClosePopupEnabled: boolean;
-    isPluginDisabled: boolean;
-}
+import { loadSettings, AppSettings } from './storage';
 
 console.log('POE / POE2 Quick Launch Content Script Loaded');
 
 // Entry Point
-chrome.storage.local.get([KEY_AUTO_START, KEY_CLOSE_TAB, KEY_CLOSE_POPUP, KEY_PLUGIN_DISABLED], (result) => {
-    const settings: PageSettings = {
-        isAutoStartEnabled: result[KEY_AUTO_START] === true,
-        isCloseTabEnabled: result[KEY_CLOSE_TAB] !== false,
-        isClosePopupEnabled: result[KEY_CLOSE_POPUP] !== false,
-        isPluginDisabled: result[KEY_PLUGIN_DISABLED] === true
-    };
-
+loadSettings().then((settings) => {
     dispatchPageLogic(settings);
 });
 
 // Listen for Hash Changes
-window.addEventListener('hashchange', () => {
+window.addEventListener('hashchange', async () => {
     console.log('[Content] Hash changed:', window.location.hash);
     if (window.location.hash.includes('#autoStart')) {
-        chrome.storage.local.get([KEY_AUTO_START, KEY_CLOSE_TAB, KEY_CLOSE_POPUP, KEY_PLUGIN_DISABLED], (result) => {
-            const currentSettings: PageSettings = {
-                isAutoStartEnabled: result[KEY_AUTO_START] === true,
-                isCloseTabEnabled: result[KEY_CLOSE_TAB] !== false,
-                isClosePopupEnabled: result[KEY_CLOSE_POPUP] !== false,
-                isPluginDisabled: result[KEY_PLUGIN_DISABLED] === true
-            };
+        const settings = await loadSettings();
 
-            if (window.location.pathname.includes('/main')) {
-                console.log('[Content] #autoStart detected via Hash Change. Re-triggering logic with fresh settings.');
-                handlePoe2Page(currentSettings);
-            }
-        });
+        if (window.location.pathname.includes('/main')) {
+            console.log('[Content] #autoStart detected via Hash Change. Re-triggering logic with fresh settings.');
+            handlePoe2Page(settings);
+        }
     }
 });
 
-function dispatchPageLogic(settings: PageSettings) {
+function dispatchPageLogic(settings: AppSettings) {
     if (settings.isPluginDisabled) {
         console.log('Plugin is disabled by user setting. Skipping all logic.');
         return;
@@ -75,7 +49,7 @@ function dispatchPageLogic(settings: PageSettings) {
     }
 }
 
-function handlePoePage(settings: PageSettings) {
+function handlePoePage(settings: AppSettings) {
     console.log('Page Type: POE MAIN');
 
     if (window.location.hash.includes('#autoStart')) {
@@ -91,7 +65,7 @@ function handlePoePage(settings: PageSettings) {
                 // Send signal to potentially close tab if configured (reuse launcher signal)
                 chrome.runtime.sendMessage({
                     action: 'launcherGameStartClicked',
-                    shouldCloseMainPage: settings.isCloseTabEnabled
+                    shouldCloseMainPage: settings.closeTab
                 });
             }
         }, 500);
@@ -101,10 +75,10 @@ function handlePoePage(settings: PageSettings) {
     }
 }
 
-function handlePoe2Page(settings: PageSettings) {
+function handlePoe2Page(settings: AppSettings) {
     console.log('Page Type: POE2 MAIN');
 
-    const shouldDismissToday = settings.isClosePopupEnabled;
+    const shouldDismissToday = settings.closePopup;
     const isAutoStart = window.location.hash.includes('#autoStart');
 
     if (shouldDismissToday || isAutoStart) {
@@ -118,7 +92,7 @@ function handlePoe2Page(settings: PageSettings) {
     }
 }
 
-function handleSecurityCenterPage(_settings: PageSettings) {
+function handleSecurityCenterPage(_settings: AppSettings) {
     console.log('Page Type: SECURITY_CENTER');
 
     const checkAndClick = (obs?: MutationObserver) => {
@@ -155,7 +129,7 @@ function handleSecurityCenterPage(_settings: PageSettings) {
     }
 }
 
-function handleLauncherPage(settings: PageSettings) {
+function handleLauncherPage(settings: AppSettings) {
     console.log('Page Type: LAUNCHER / PUBSVC');
 
     const checkAndClick = (obs?: MutationObserver) => {
@@ -193,7 +167,7 @@ function handleLauncherPage(settings: PageSettings) {
             console.log('Launcher Game Start clicked. Sending signal to Background...');
             chrome.runtime.sendMessage({
                 action: 'launcherGameStartClicked',
-                shouldCloseMainPage: settings.isCloseTabEnabled
+                shouldCloseMainPage: settings.closeTab
             }, () => {
                 const err = chrome.runtime.lastError;
                 if (err) {
@@ -218,7 +192,7 @@ function handleLauncherPage(settings: PageSettings) {
     }
 }
 
-function startPolling(settings: PageSettings) {
+function startPolling(settings: AppSettings) {
     let attempts = 0;
     let modalWaitCount = 0;
     const maxAttempts = 75; // 15 seconds (200ms * 75)
@@ -258,7 +232,7 @@ function startPolling(settings: PageSettings) {
             console.log('Sending game start signal from Main Page...');
             chrome.runtime.sendMessage({
                 action: 'launcherGameStartClicked',
-                shouldCloseMainPage: settings.isCloseTabEnabled
+                shouldCloseMainPage: settings.closeTab
             }, () => {
                 const err = chrome.runtime.lastError;
                 if (err) console.log('Main Page Signal sent (safely ignored error).');

@@ -67,8 +67,10 @@ chrome.runtime.onMessage.addListener((request: MessageRequest, sender, sendRespo
                         console.log('[Background] Auto Close disabled. Sending "cleanupUrl" signal to Main Page:', tabIds);
                         tabIds.forEach(id => {
                             chrome.tabs.sendMessage(id, { action: 'cleanupUrl' }, (response) => {
-                                if (chrome.runtime.lastError) {
-                                    console.error(`[Background] Failed to send cleanup to tab ${id}:`, chrome.runtime.lastError);
+                                const lastError = chrome.runtime.lastError;
+                                if (lastError) {
+                                    // Common error if tab is closed or refreshing. Lower severity to warn.
+                                    console.warn(`[Background] Cleanup signal failed for tab ${id} (likely closed/busy):`, lastError.message || lastError);
                                 } else {
                                     console.log(`[Background] Cleanup signal delivered to tab ${id}. Response:`, response);
                                 }
