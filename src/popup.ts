@@ -20,27 +20,132 @@ const patchNotesContent = document.getElementById('patchNotesContent') as HTMLEl
 
 let selectedGame: GameType = 'poe2'; // Default local state, will be updated from storage
 
+import bgPoe from './assets/poe/bg-keepers.png';
+import bgPoe2 from './assets/poe2/bg-forest.webp';
+
 // Game Configuration
 const GAME_CONFIG = {
     poe: {
         bgClass: 'bg-poe',
+        bgImage: bgPoe,
         url: 'https://poe.game.daum.net#autoStart',
-        showFixGuide: false
+        showFixGuide: false,
+        fallback: {
+            text: '#c8c8c8',
+            accent: '#dfcf99', // Gold
+            footer: '#1a1510'   // Dark Brown/Black
+        }
     },
     poe2: {
         bgClass: 'bg-poe2',
+        bgImage: bgPoe2,
         url: 'https://pathofexile2.game.daum.net/main#autoStart',
-        showFixGuide: true
+        showFixGuide: true,
+        fallback: {
+            text: '#b5c2b5',
+            accent: '#aaddaa', // Mint
+            footer: '#0c150c'  // Dark Green
+        }
     }
 };
 
-function updateGameUI(game: GameType) {
+// --- Color Utils ---
+function rgbToHsl(r: number, g: number, b: number) {
+    r /= 255; g /= 255; b /= 255;
+    const max = Math.max(r, g, b), min = Math.min(r, g, b);
+    let h = 0, s, l = (max + min) / 2;
+
+    if (max === min) {
+        h = s = 0; // achromatic
+    } else {
+        const d = max - min;
+        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+        switch (max) {
+            case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+            case g: h = (b - r) / d + 2; break;
+            case b: h = (r - g) / d + 4; break;
+        }
+        h /= 6;
+    }
+    return [h * 360, s, l];
+}
+
+function hslToHex(h: number, s: number, l: number) {
+    l /= 100;
+    const a = s * Math.min(l, 1 - l) / 100;
+    const f = (n: number) => {
+        const k = (n + h / 30) % 12;
+        const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+        return Math.round(255 * color).toString(16).padStart(2, '0');
+    };
+    return `#${f(0)}${f(8)}${f(4)}`;
+}
+
+async function extractThemeColors(imageUrl: string, fallback: { text: string, accent: string, footer: string }): Promise<{ text: string, accent: string, footer: string }> {
+    return new Promise((resolve) => {
+        const img = new Image();
+        // Removed crossOrigin as it can cause issues with local extension assets
+        img.src = imageUrl;
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            if (!ctx) return resolve(fallback);
+
+            // Sample the image (resize to 1x1 to get average)
+            canvas.width = 1;
+            canvas.height = 1;
+            ctx.drawImage(img, 0, 0, 1, 1);
+            const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
+
+            // Convert to HSL for adjustment
+            let [h, s, l] = rgbToHsl(r, g, b);
+
+            // 1. Accent: Keep Hue, Boost Saturation
+            const accentS = Math.max(s * 100, 50);
+            const accentL = Math.max(Math.min(l * 100 * 1.5, 80), 60);
+            const accent = hslToHex(h, accentS, accentL);
+
+            // 2. Text: Slight Tint
+            const textS = Math.min(s * 100, 20);
+            const textL = 90;
+            const text = hslToHex(h, textS, textL);
+
+            // 3. Footer BG: Very Dark version of Hue
+            const footerS = Math.min(s * 100, 20);
+            const footerL = 8;
+            const footer = hslToHex(h, footerS, footerL);
+
+            resolve({ text, accent, footer });
+        };
+        img.onerror = () => {
+            console.warn('Failed to load bg image, using fallback:', imageUrl);
+            resolve(fallback);
+        };
+    });
+}
+
+async function updateGameUI(game: GameType) {
     selectedGame = game; // Update local state
     const config = GAME_CONFIG[game];
 
     // 1. Background
     document.body.classList.remove('bg-poe', 'bg-poe2');
     document.body.classList.add(config.bgClass);
+
+    // 2. Dynamic Color Extraction
+    try {
+        const colors = await extractThemeColors(config.bgImage, config.fallback);
+        document.body.style.setProperty('--theme-text', colors.text);
+        document.body.style.setProperty('--theme-accent', colors.accent);
+        document.body.style.setProperty('--theme-footer-bg', colors.footer);
+        console.log(`[Theme] ${game} -> Accent: ${colors.accent}, Footer: ${colors.footer}`);
+    } catch (e) {
+        console.warn('Theme color extraction failed completely, using fallback.', e);
+        // Apply fallback directly in case of catastrophe
+        document.body.style.setProperty('--theme-text', config.fallback.text);
+        document.body.style.setProperty('--theme-accent', config.fallback.accent);
+        document.body.style.setProperty('--theme-footer-bg', config.fallback.footer);
+    }
 
     // 2. Logos (Active/Inactive)
     if (game === 'poe') {

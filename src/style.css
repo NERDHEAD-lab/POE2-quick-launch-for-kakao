@@ -38,13 +38,11 @@ body.bg-poe2 {
   height: 100%;
   box-sizing: border-box;
   gap: 0;
-  /* Reset gap, control via margin/padding */
 }
 
 /* 1. Main Section (Top) */
 .main-section {
   flex: 0 0 auto;
-  /* Natural height */
   margin-bottom: 0;
   z-index: 20;
 }
@@ -52,7 +50,6 @@ body.bg-poe2 {
 .action-section {
   margin-top: -4px;
   margin-bottom: 8px;
-  /* Gap between buttons and menu */
   position: relative;
   z-index: 10;
 }
@@ -60,18 +57,12 @@ body.bg-poe2 {
 /* 2. Menu Section (Middle - Fills remaining space) */
 .drawer-container {
   flex: 1 1 auto;
-  /* Grow to fill space */
   display: flex;
   flex-direction: column-reverse;
-  /* Stack from bottom */
   min-height: 0;
-  /* Crucial for scrolling inside flex Item */
   margin-bottom: 0;
-
   overflow: hidden;
-  /* Clip overflow */
   position: relative;
-  /* Context */
   z-index: 50;
 }
 
@@ -81,58 +72,54 @@ body.bg-poe2 {
   flex-direction: column;
   flex-shrink: 0;
   width: 100%;
-  /* Use simple ease-in-out for balanced swap */
   transition: flex 0.4s ease-in-out;
-  /* Ensure clipping happens during animation */
   overflow: hidden;
 }
 
-/* When content is open, this block expands to fill empty space */
 .drawer-block:has(.open) {
   flex: 1 1 auto;
   min-height: 0;
 }
 
-/* Content Panel (Relative Flow) */
+/* Content Panel */
 .drawer-content {
   position: relative;
   width: 100%;
-  background: rgba(10, 14, 10, 0.95);
+  background: var(--theme-footer-bg, rgba(10, 14, 10, 0.95));
   box-sizing: border-box;
-  /* Crucial: Include padding and border in width to prevent clipping */
-
-  /* Instantly collapse when closed */
   max-height: 0;
-
   opacity: 0;
-  /* Only animate opacity. Let Parent Flex handle the reveal. */
   transition: opacity 0.4s ease-in-out;
-
   box-shadow: none;
 }
 
 .drawer-content.open {
   flex: 1 1 auto;
-  /* Fill parent block */
   max-height: 1000px;
-  /* Huge limit to allow scrolling, instant application */
   opacity: 1;
   overflow-y: auto;
-  /* Scroll if content exceeds space */
   border-bottom: 1px solid rgba(223, 207, 153, 0.1);
 }
 
 /* 3. Footer Section (Bottom) */
 .footer-section {
   flex: 0 0 auto;
-  /* Natural height */
   position: relative;
   z-index: 60;
-  background: #0c150c;
-  /* Opaque bg to hide content behind */
+  background: var(--theme-footer-bg, #0c150c);
   padding-bottom: 0;
-  /* Visual separation */
   box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.5);
+}
+
+/* ... existing code ... */
+
+.drawer-handle.active {
+  background: var(--theme-footer-bg, #1a221a);
+  color: var(--theme-accent, #fff);
+  /* Use Accent for Active Text */
+  text-shadow: 0 0 8px rgba(223, 207, 153, 0.6);
+  border-left: 3px solid var(--theme-accent, #dfcf99);
+  padding-left: 13px;
 }
 
 /* Reset Description Styles */
@@ -140,20 +127,17 @@ body.bg-poe2 {
   margin: 0;
   width: 100%;
   position: relative;
-  /* Flow naturally */
   bottom: auto;
   left: auto;
   right: auto;
   padding: 4px 12px;
-  /* Reduced vertical padding */
   text-align: center;
   background: none;
-  /* Using footer bg */
   border: none;
 }
 
 .description.top-guide p {
-  color: #889988;
+  color: var(--theme-text, #889988);
   font-size: 11px;
 }
 
@@ -164,17 +148,12 @@ body.bg-poe2 {
   align-items: center;
   gap: 12px;
   padding: 0;
-  /* Remove padding entirely */
   position: relative;
   bottom: auto;
   left: auto;
   background: none;
-
-  /* Overlap Logic */
   z-index: 30;
-  /* Sit above banner (z-20) */
   margin-bottom: -24px;
-  /* Pull banner up to overlap */
 }
 
 /* Reset Credits Banner */
@@ -191,12 +170,10 @@ body.bg-poe2 {
   background-size: cover;
   background-position: center;
   z-index: 20;
-  /* Below Logos */
 }
 
 .credits-text {
   margin-top: 28px;
-  /* Text stays low */
   font-size: 9px;
   color: #555;
   text-shadow: none;
@@ -207,14 +184,9 @@ body.bg-poe2 {
   display: flex;
   justify-content: center;
   align-items: center;
-  /* Center vertically */
   gap: 4px;
-  /* Slight gap */
   margin-bottom: 4px;
-  /* Minimal bottom margin */
   width: 100%;
-
-  /* Link Styles Removed */
   text-decoration: none;
 }
 
@@ -223,7 +195,6 @@ body.bg-poe2 {
 .logo-sub {
   cursor: pointer;
   pointer-events: auto !important;
-  /* Override previous none */
   transition: filter 0.3s ease, opacity 0.3s ease, transform 0.2s;
 }
 
@@ -244,10 +215,8 @@ img.inactive {
 .logo {
   display: block;
   height: 90px;
-  /* Increased from 60px */
   width: auto;
   max-width: 45%;
-  /* Prevent overthrow */
   object-fit: contain;
   margin: 0;
   pointer-events: none;
@@ -257,10 +226,8 @@ img.inactive {
 .logo-sub {
   display: block;
   height: 85px;
-  /* Increased from 55px */
   width: auto;
   max-width: 55%;
-  /* Allow Druids to be wider */
   object-fit: contain;
   margin: 0;
   pointer-events: none;
@@ -271,7 +238,6 @@ img.inactive {
 
 .action-section {
   margin-top: 0;
-  /* Remove negative margin as logos are now compact */
   margin-bottom: 8px;
   position: relative;
   z-index: 10;
@@ -322,31 +288,22 @@ img.inactive {
   white-space: nowrap;
 }
 
-
 /* Secondary Button (Partial Fix Guide) */
 .sub-link {
   display: flex;
   justify-content: center;
   align-items: center;
   width: 96%;
-  /* Reduced from 100% */
   height: 34px;
-  /* Increased from 32px for breathing room */
   margin: 2px auto 0 auto;
-  /* Reduced gap to move closer to Game Start */
-
   background-image: url('assets/btn-text.png');
   background-repeat: no-repeat;
   background-position: center top;
-  /* Normal State: Top half */
   background-size: 100% 200%;
-  /* Force BG height to be 2x container height */
   position: relative;
   cursor: pointer;
   text-decoration: none;
   margin-top: 6px;
-
-  /* Text Styles */
   color: #dfcf99;
   font-size: 11px;
   font-weight: 500;
@@ -365,7 +322,6 @@ img.inactive {
   background-image: url('assets/btn-text.png');
   background-repeat: no-repeat;
   background-position: center bottom;
-  /* Hover State: Bottom half */
   background-size: 100% 200%;
   opacity: 0;
   transition: opacity 0.3s ease;
@@ -376,7 +332,6 @@ img.inactive {
   opacity: 1;
 }
 
-/* Text Layer */
 .sub-link .btn-text {
   position: relative;
   z-index: 2;
@@ -385,20 +340,7 @@ img.inactive {
 
 .sub-link:hover .btn-text {
   color: #fff;
-  /* Brighten text on hover */
   text-shadow: 0 0 5px rgba(223, 207, 153, 0.5);
-}
-
-/* --- Legacy Layout Removed (Replaced by Flex System at Top) --- */
-
-.drawer-block {
-  display: flex;
-  flex-direction: column;
-  /* Inside value: Handle Top, Content Bottom */
-  width: 100%;
-  pointer-events: auto;
-  /* Re-enable for visible blocks */
-  flex-shrink: 0;
 }
 
 /* Handle Styling */
@@ -411,13 +353,12 @@ img.inactive {
   padding: 0 16px;
   box-sizing: border-box;
 
-  background: rgba(14, 18, 14, 0.95);
+  background: var(--theme-footer-bg, rgba(14, 18, 14, 0.95));
   cursor: pointer;
-  border-bottom: 1px solid rgba(223, 207, 153, 0.1);
-  border-top: 1px solid rgba(223, 207, 153, 0.3);
-  /* Each handle has top border */
+  border-bottom: 1px solid var(--theme-accent, rgba(223, 207, 153, 0.1));
+  border-top: 1px solid var(--theme-accent, rgba(223, 207, 153, 0.3));
 
-  color: #dfcf99;
+  color: var(--theme-text, #dfcf99);
   font-size: 13px;
   font-weight: 500;
   transition: all 0.2s ease;
@@ -425,16 +366,17 @@ img.inactive {
 }
 
 .drawer-handle:hover {
-  background: rgba(30, 35, 30, 0.95);
+  background: var(--theme-footer-bg, rgba(30, 35, 30, 0.95));
+  filter: brightness(1.2);
   color: #fff;
-  text-shadow: 0 0 5px rgba(223, 207, 153, 0.4);
+  text-shadow: 0 0 5px var(--theme-accent, rgba(223, 207, 153, 0.4));
 }
 
 .drawer-handle.active {
-  background: #1a221a;
+  background: var(--theme-footer-bg, #1a221a);
   color: #fff;
-  text-shadow: 0 0 8px rgba(223, 207, 153, 0.6);
-  border-left: 3px solid #dfcf99;
+  text-shadow: 0 0 8px var(--theme-accent, rgba(223, 207, 153, 0.6));
+  border-left: 3px solid var(--theme-accent, #dfcf99);
   padding-left: 13px;
 }
 
@@ -443,14 +385,9 @@ img.inactive {
   transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
-/* Arrow Logic: Content below. Open = Point Up (Collapse)? or Down?
-   User said "Like picture". Picture 3 has Down arrows.
-   Let's use: Closed = Down (▼), Open = Up (▲). */
 .drawer-handle.active .arrow-indicator {
   transform: rotate(180deg);
 }
-
-/* --- Legacy Duplicates Removed --- */
 
 /* Specific Content Internal Padding */
 .patch-notes-content {
@@ -486,7 +423,7 @@ img.inactive {
 .patch-notes-content h3 {
   margin: 10px 0 6px 0;
   font-size: 12px;
-  color: #dfcf99;
+  color: var(--theme-accent, #dfcf99);
   border-bottom: 1px solid rgba(223, 207, 153, 0.2);
   padding-bottom: 4px;
   display: flex;
@@ -498,14 +435,7 @@ img.inactive {
   margin-top: 0;
 }
 
-.version-badge {
-  background: #2e3a2e;
-  color: #90d090;
-  font-size: 10px;
-  padding: 1px 4px;
-  border-radius: 3px;
-  border: 1px solid #4a6a4a;
-}
+
 
 .patch-notes-content ul {
   margin: 0;
@@ -521,7 +451,7 @@ img.inactive {
 
 /* Controls */
 .control-group {
-  background: rgba(30, 35, 30, 0.6);
+  background: rgba(0, 0, 0, 0.5);
   padding: 10px 14px;
   border-radius: 4px;
   border: 1px solid rgba(255, 255, 255, 0.05);
@@ -551,8 +481,6 @@ img.inactive {
   border-radius: 4px;
   line-height: 1.4;
   border: 1px solid rgba(255, 255, 255, 0.05);
-
-  /* Removed absolute positioning to allow flow at the top */
   width: calc(100% - 24px);
   margin: 0 auto;
   box-sizing: border-box;
@@ -569,7 +497,7 @@ img.inactive {
   padding: 2px 4px;
   border-radius: 3px;
   font-family: monospace;
-  color: #9cdb43;
+  color: var(--theme-accent, #9cdb43);
 }
 
 /* Switch */
@@ -613,7 +541,7 @@ img.inactive {
 }
 
 input:checked+.slider {
-  background-color: #5dae26;
+  background-color: var(--theme-accent, #5dae26);
 }
 
 input:checked+.slider:before {
@@ -622,7 +550,7 @@ input:checked+.slider:before {
 }
 
 input:focus+.slider {
-  box-shadow: 0 0 0 2px rgba(93, 174, 38, 0.3);
+  box-shadow: 0 0 0 2px var(--theme-accent, rgba(93, 174, 38, 0.5));
 }
 
 .spacer-top {
@@ -637,21 +565,25 @@ input:focus+.slider.red {
   box-shadow: 0 0 0 2px rgba(185, 59, 59, 0.3);
 }
 
-/* --- Legacy Footer Removed --- */
-
+/* Disabled State */
 body.plugin-disabled .main-start__link {
   filter: grayscale(100%) brightness(0.4);
   cursor: not-allowed;
 }
 
-body.plugin-disabled .control-group:not(.always-active) {
+body.plugin-disabled .control-group:not(#pluginDisableGroup) {
   opacity: 0.4;
   pointer-events: none;
   filter: grayscale(100%);
 }
 
-/* --- Tooltip Styles --- */
+body.plugin-disabled #pluginDisableGroup {
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  filter: none !important;
+}
 
+/* Tooltips */
 .label-container {
   display: flex;
   align-items: center;
@@ -693,28 +625,23 @@ body.plugin-disabled .control-group:not(.always-active) {
   bottom: 250px;
   left: 50%;
   transform: translateX(-50%);
-
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
-
   background: rgba(0, 0, 0, 0.95);
   padding: 4px;
   border: 1px solid #dfcf99;
   border-radius: 4px;
   z-index: 999;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.8);
-
   transition: opacity 0.2s ease;
   width: max-content;
   max-width: 300px;
-  /* Constrain popup width */
 }
 
 .tooltip-popup img {
   display: block;
   width: 280px;
-  /* Explicit image width */
   height: auto;
 }
 
@@ -722,10 +649,9 @@ body.plugin-disabled .control-group:not(.always-active) {
   opacity: 1;
   visibility: visible;
   pointer-events: auto;
-  /* Fixed position handles translation */
 }
 
-/* Restore Logo Sizes */
+/* Assets */
 .ci-kakao {
   height: 14px;
   width: auto;
@@ -744,19 +670,7 @@ body.plugin-disabled .control-group:not(.always-active) {
   background-color: #666;
 }
 
-/* Credits Banner Text */
 .credits-banner {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 100%;
-  height: 48px;
-  /* Adjusted for better spacing */
-  background-image: url('assets/banner-bottom.webp');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  margin-top: 0;
   filter: brightness(1.5);
 }
 
@@ -769,24 +683,4 @@ body.plugin-disabled .control-group:not(.always-active) {
   font-weight: 700;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
   margin-top: 28px;
-  /* Per user request: Push text down lower */
-}
-
-/* Fix disabled state targeting */
-body.plugin-disabled .main-start__link {
-  filter: grayscale(100%) brightness(0.4);
-  cursor: not-allowed;
-}
-
-body.plugin-disabled .control-group:not(#pluginDisableGroup) {
-  opacity: 0.4;
-  pointer-events: none;
-  filter: grayscale(100%);
-}
-
-/* Force Enable Plugin Toggle */
-body.plugin-disabled #pluginDisableGroup {
-  opacity: 1 !important;
-  pointer-events: auto !important;
-  filter: none !important;
 }
