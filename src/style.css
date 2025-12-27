@@ -6,12 +6,19 @@ body {
   font-family: 'Noto Sans KR', 'Malgun Gothic', sans-serif;
   padding: 0;
   background-color: #0c150c;
-  background-image: url('assets/poe2/bg-forest.webp');
   background-size: cover;
   background-position: center top;
   background-repeat: no-repeat;
   color: #c8c8c8;
   margin: 0;
+}
+
+body.bg-poe {
+  background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('assets/poe/bg-keepers.png');
+}
+
+body.bg-poe2 {
+  background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('assets/poe2/bg-forest.webp');
   overflow: hidden;
   position: relative;
 }
@@ -209,6 +216,28 @@ body {
 
   /* Link Styles Removed */
   text-decoration: none;
+}
+
+/* Logos - Interactive */
+.logo,
+.logo-sub {
+  cursor: pointer;
+  pointer-events: auto !important;
+  /* Override previous none */
+  transition: filter 0.3s ease, opacity 0.3s ease, transform 0.2s;
+}
+
+.logo:hover,
+.logo-sub:hover {
+  transform: scale(1.05);
+  z-index: 10;
+}
+
+/* Inactive State */
+img.inactive {
+  filter: grayscale(100%) brightness(0.4) !important;
+  opacity: 0.6;
+  z-index: 0;
 }
 
 /* Logos - Maximize size for horizontal fit */
@@ -728,6 +757,7 @@ body.plugin-disabled .control-group:not(.always-active) {
   background-position: center;
   background-repeat: no-repeat;
   margin-top: 0;
+  filter: brightness(1.5);
 }
 
 .credits-text {

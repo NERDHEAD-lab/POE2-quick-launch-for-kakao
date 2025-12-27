@@ -4,6 +4,7 @@
     top: 0;
     z-index: 50;
     pointer-events: none;
+    filter: brightness(1.5);
 }
 
 .top-left {
@@ -48,6 +49,7 @@
     background-repeat: repeat-x;
     background-size: auto 100%;
     pointer-events: none;
+    filter: brightness(1.5);
 }
 
 .border-left {
