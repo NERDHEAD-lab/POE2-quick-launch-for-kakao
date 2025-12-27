@@ -36,23 +36,20 @@ chrome.runtime.onMessage.addListener((request: MessageRequest, sender, sendRespo
         setTimeout(() => {
             console.log('5s Safety Timer finished. Proceeding to cleanup...');
 
-            // 2. Close the Launcher Popup (Conditional)
-            // If the signal came from the Main Page (fallback trigger), DO NOT close it here.
-            // Only close if it's an actual Launcher/Popup tab.
+            // 2. Close the Launcher Popup (Conditional) - REMOVED
+            // User feedback: Launcher pages (gamestart, pubsvc) close automatically.
+            // We should not force close them here to avoid errors or unintended behavior.
             if (sender.tab && sender.tab.id) {
-                const isMainPage = sender.tab.url && sender.tab.url.includes('/main');
-                if (!isMainPage) {
-                    console.log('Closing Launcher tab:', sender.tab.id);
-                    chrome.tabs.remove(sender.tab.id).catch(() => console.log('Launcher tab likely already closed.'));
-                } else {
-                    console.log('Signal came from Main Page. Keeping tab open for now (logic specific below).');
-                }
+                console.log('Processed Game Start signal from tab:', sender.tab.id);
             }
 
             // 3. Handle Main Page (Close OR Cleanup)
             setTimeout(() => {
                 chrome.tabs.query({ url: "*://*.game.daum.net/*" }, (tabs) => {
-                    const mainPageTabs = tabs.filter(t => t.url && t.url.includes('/main'));
+                    const mainPageTabs = tabs.filter(t => t.url && (
+                        t.url.includes('pathofexile2.game.daum.net') ||
+                        t.url.includes('poe.game.daum.net')
+                    ));
                     const tabIds = mainPageTabs.map(t => t.id).filter((id): id is number => id !== undefined);
 
                     if (tabIds.length === 0) {
