@@ -338,6 +338,100 @@ img.inactive {
   transition: color 0.2s;
 }
 
+/* Sub Actions (Homepage / Trade) */
+.sub-actions {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  width: 96%;
+  margin: 8px auto 6px auto;
+}
+
+.menu-btn {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 33px;
+  /* Adjusted based on shop button height */
+  background-image: url('assets/btn-generic-normal-left.png'), url('assets/btn-generic-normal-right.png'), url('assets/btn-generic-normal-mid.png');
+  background-position: left top, right top, center top;
+  background-repeat: no-repeat, no-repeat, repeat-x;
+  background-color: transparent;
+  border: none;
+  box-shadow: none;
+  text-decoration: none;
+  position: relative;
+  overflow: hidden;
+  transition: none;
+  /* Instant feedback for button press */
+}
+
+/* POE Graphic Borders Overlay (Pseudo-elements) */
+.menu-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #cba271, transparent);
+  opacity: 0.5;
+}
+
+.menu-btn::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #cba271, transparent);
+  opacity: 0.3;
+}
+
+.menu-btn .btn-text {
+  color: #dfcf99;
+  /* Brighter gold/beige for better visibility */
+  font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif;
+  font-size: 16px;
+  font-weight: bold;
+  /* Bold text as requested */
+  text-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+  /* Dark shadow for better contrast */
+  z-index: 2;
+  margin-top: -2px;
+}
+
+/* Hover State */
+.menu-btn:hover {
+  background-image: url('assets/btn-generic-hover-left.png'), url('assets/btn-generic-hover-right.png'), url('assets/btn-generic-hover-mid.png');
+  filter: none;
+}
+
+.menu-btn:hover .btn-text {
+  color: #dec288;
+  /* Slightly brighter gold on hover */
+  text-shadow: 0 0 8px rgba(222, 194, 136, 0.6);
+}
+
+/* Active/Pressed State */
+.menu-btn:active {
+  background-image: url('assets/btn-generic-pressed-left.png'), url('assets/btn-generic-pressed-right.png'), url('assets/btn-generic-pressed-mid.png');
+}
+
+.menu-btn:active .btn-text {
+  margin-top: 0px;
+  /* Text push effect */
+  color: #aa8630;
+}
+
+/* Active/Click State */
+.menu-btn:active {
+  transform: translateY(1px);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.4);
+}
+
 .sub-link:hover .btn-text {
   color: #fff;
   text-shadow: 0 0 5px rgba(223, 207, 153, 0.5);

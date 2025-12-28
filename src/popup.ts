@@ -7,6 +7,8 @@ const closePopupToggle = document.getElementById('closePopupToggle') as HTMLInpu
 const pluginDisableToggle = document.getElementById('pluginDisableToggle') as HTMLInputElement;
 const launchBtn = document.getElementById('launchBtn') as HTMLAnchorElement;
 const fixGuideBtn = document.getElementById('fixGuideBtn') as HTMLAnchorElement;
+const btnHomepage = document.getElementById('btnHomepage') as HTMLAnchorElement;
+const btnTrade = document.getElementById('btnTrade') as HTMLAnchorElement;
 
 // Game Switcher Elements
 const logoPoe = document.getElementById('logoPoe') as HTMLImageElement;
@@ -29,6 +31,8 @@ const GAME_CONFIG = {
         bgClass: 'bg-poe',
         bgImage: bgPoe,
         url: 'https://poe.game.daum.net#autoStart',
+        homepageUrl: 'https://poe.game.daum.net/',
+        tradeUrl: 'https://poe.game.daum.net/trade',
         showFixGuide: false,
         fallback: {
             text: '#c8c8c8',
@@ -40,6 +44,8 @@ const GAME_CONFIG = {
         bgClass: 'bg-poe2',
         bgImage: bgPoe2,
         url: 'https://pathofexile2.game.daum.net/main#autoStart',
+        homepageUrl: 'https://pathofexile2.game.daum.net/main',
+        tradeUrl: 'https://poe.game.daum.net/trade2',
         showFixGuide: true,
         fallback: {
             text: '#b5c2b5',
@@ -159,7 +165,11 @@ async function updateGameUI(game: GameType) {
     // 3. Launch Button URL
     launchBtn.dataset.url = config.url;
 
-    // 4. Fix Guide Visibility
+    // 4. Update Nav Buttons
+    if (btnHomepage) btnHomepage.href = config.homepageUrl;
+    if (btnTrade) btnTrade.href = config.tradeUrl;
+
+    // 5. Fix Guide Visibility
     if (config.showFixGuide) {
         fixGuideBtn.style.display = 'flex';
     } else {
@@ -240,10 +250,14 @@ function updatePluginDisabledState(isDisabled: boolean) {
         document.body.classList.add('plugin-disabled');
         launchBtn.style.pointerEvents = 'none'; // Disable link click
         launchBtn.removeAttribute('href');
+        if (btnHomepage) btnHomepage.style.pointerEvents = 'none';
+        if (btnTrade) btnTrade.style.pointerEvents = 'none';
     } else {
         document.body.classList.remove('plugin-disabled');
         launchBtn.style.pointerEvents = 'auto';
         launchBtn.href = '#'; // Restore href
+        if (btnHomepage) btnHomepage.style.pointerEvents = 'auto';
+        if (btnTrade) btnTrade.style.pointerEvents = 'auto';
     }
 }
 
