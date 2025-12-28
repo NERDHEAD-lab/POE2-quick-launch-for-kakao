@@ -81,8 +81,11 @@ function handlePoe2Page(settings: AppSettings) {
     const shouldDismissToday = settings.closePopup;
     const isAutoStart = window.location.hash.includes('#autoStart');
 
+    // Modal Logic:
+    // 1. Always Close = True -> Try "Today Close" (ignoring #autoStart)
+    // 2. Always Close = False + #autoStart -> Try "Close" (X button)
     if (shouldDismissToday || isAutoStart) {
-        manageIntroModal(shouldDismissToday);
+        manageIntroModal(shouldDismissToday); // Pass true if we prefer "Today Close"
     }
 
     if (isAutoStart) {
@@ -194,7 +197,6 @@ function handleLauncherPage(settings: AppSettings) {
 
 function startPolling(settings: AppSettings) {
     let attempts = 0;
-    let modalWaitCount = 0;
     const maxAttempts = 75; // 15 seconds (200ms * 75)
 
     const interval = setInterval(() => {
@@ -203,21 +205,10 @@ function startPolling(settings: AppSettings) {
             return;
         }
 
-        // 1. Modal Blocker Check
-        if (modalWaitCount < 15) {
-            const visibleModal = Array.from(document.querySelectorAll(SELECTORS.MAIN.MODAL_CONTAINER)).find(
-                el => (el as HTMLElement).offsetParent !== null
-            );
+        // 1. Modal Blocker Check (REMOVED)
+        // User requested independent execution. Game Start click should not wait for modal.
+        // Previously acted as a 3s delay if modal was present.
 
-            if (visibleModal) {
-                if (modalWaitCount % 5 === 0) console.log(`Intro Modal detected. Waiting... (${modalWaitCount + 1}/15)`);
-                modalWaitCount++;
-                return;
-            }
-        } else if (modalWaitCount === 15) {
-            console.log('Modal wait timeout exceeded. Bypassing check...');
-            modalWaitCount++;
-        }
 
         attempts++;
         const startBtn = document.querySelector(SELECTORS.MAIN.BTN_GAME_START) as HTMLElement;
@@ -274,7 +265,7 @@ function manageIntroModal(preferTodayClose: boolean) {
 
         if ((container as HTMLElement).offsetParent === null) return false;
 
-        // Strategy A: "Today Close" Logic
+        // Strategy A: "Today Close" Logic (Only if preferred)
         if (preferTodayClose) {
             const todayBtn = container.querySelector(SELECTORS.MAIN.BTN_TODAY_CLOSE);
             if (todayBtn) {
@@ -282,11 +273,11 @@ function manageIntroModal(preferTodayClose: boolean) {
                 safeClick(todayBtn as HTMLElement);
                 return true;
             } else {
-                console.log('"Today Close" preferred but button not found. Falling back to X...');
+                console.log('"Today Close" preferred but button not found. Trying invalid fallback? No, sticking to X.');
             }
         }
 
-        // Strategy B: Click "X" (Fallback)
+        // Strategy B: Click "X" (Default or Fallback)
         const closeBtn = container.querySelector(SELECTORS.MAIN.BTN_CLOSE_X);
         if (closeBtn) {
             console.log('Found "Close" button (X). Clicking...');
