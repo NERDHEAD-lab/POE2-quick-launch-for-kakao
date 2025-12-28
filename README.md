@@ -1,6 +1,6 @@
 # POE2 Quick Launch for Kakao
 
-![DOWNLOAD@SNAPSHOT](https://img.shields.io/github/downloads/NERDHEAD-lab/POE2-quick-launch-for-kakao/1.0.0-SNAPSHOT/poe2-quick-launch-for-kakao.zip?style=for-the-badge&color=success&label=DOWNLOAD@SNAPSHOT)
+![DOWNLOAD@SNAPSHOT](https://img.shields.io/github/downloads/NERDHEAD-lab/POE2-quick-launch-for-kakao/1.0.0-SNAPSHOT/total?style=for-the-badge&color=success&label=DOWNLOAD@SNAPSHOT)
 
 ![Demo](docs/demo_preview.gif)
 
