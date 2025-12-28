@@ -3,7 +3,7 @@
 html,
 body {
   width: 380px;
-  height: 580px;
+  height: 600px;
   margin: 0;
   padding: 0;
   font-family: 'Fontin', sans-serif;
@@ -46,7 +46,7 @@ body.bg-poe2 {
 }
 
 .content-wrapper {
-  padding: 32px 12px 0 12px;
+  padding: 24px 12px 0 12px;
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -63,7 +63,7 @@ body.bg-poe2 {
 
 .action-section {
   margin-top: -4px;
-  margin-bottom: 8px;
+  margin-bottom: 4px;
   position: relative;
   z-index: 10;
 }
@@ -222,8 +222,7 @@ body.bg-poe2 {
   align-items: center;
   justify-content: center;
   gap: 4px;
-  margin: 30px auto -12px auto;
-  /* 30px top to clear logo overlap */
+  /* Margin moved to container .footer-links */
   padding: 3px 8px;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -241,6 +240,56 @@ body.bg-poe2 {
   transform: translateY(-1px);
 }
 
+/* Footer Links Container */
+.footer-links {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin: 30px auto -12px auto;
+  position: relative;
+  z-index: 35;
+  width: fit-content;
+}
+
+/* Adjust Support Badge Margin since it's now in container */
+.support-badge {
+  margin: 0;
+}
+
+.footer-divider {
+  color: rgba(255, 255, 255, 0.2);
+  font-size: 10px;
+}
+
+/* Issue Link - Styled as Badge */
+.issue-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3px 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+
+  font-size: 10px;
+  color: #bbb;
+  text-decoration: none;
+  font-family: 'Tahoma', sans-serif;
+  letter-spacing: 0.02em;
+  font-weight: bold;
+
+  transition: all 0.2s ease;
+}
+
+.issue-link:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--theme-accent, #dfcf99);
+  color: var(--theme-accent, #dfcf99);
+  transform: translateY(-1px);
+  text-decoration: none;
+}
+
 .badge-icon {
   font-size: 10px;
   color: #dfcf99;
@@ -252,6 +301,7 @@ body.bg-poe2 {
   color: #bbb;
   font-family: 'Tahoma', sans-serif;
   letter-spacing: 0.02em;
+  font-weight: bold;
 }
 
 .support-badge:hover .badge-text {
@@ -293,7 +343,7 @@ img.inactive {
 /* Logos - Maximize size for horizontal fit */
 .logo {
   display: block;
-  height: 90px;
+  height: 80px;
   width: auto;
   max-width: 45%;
   object-fit: contain;
@@ -304,7 +354,7 @@ img.inactive {
 
 .logo-sub {
   display: block;
-  height: 85px;
+  height: 75px;
   width: auto;
   max-width: 55%;
   object-fit: contain;
