@@ -1,26 +1,28 @@
-/**
- * Centralized Storage Management
- * Handles all chrome.storage.local interactions, types, and default values.
- */
-
 export type GameType = 'poe' | 'poe2';
+
+export interface PatchNote {
+    title: string;
+    link: string;
+    date: string;
+    isNew?: boolean;
+}
 
 export interface AppSettings {
     closeTab: boolean;
     closePopup: boolean;
     pluginDisable: boolean;
     patchNoteCount: number; // 1~20
-    lastPatchNoteRead: number; // Timestamp
+    cachedPatchNotes: Record<GameType, PatchNote[]>;
     selectedGame: GameType;
 }
 
 export const STORAGE_KEYS = {
     CLOSE_TAB: 'closeTab',
     CLOSE_POPUP: 'closePopup',
-    PLUGIN_DISABLED: 'pluginDisable', // Renamed key for consistency
+    PLUGIN_DISABLED: 'pluginDisable',
     SELECTED_GAME: 'selectedGame',
     PATCH_NOTE_COUNT: 'patchNoteCount',
-    LAST_PATCH_NOTE_READ: 'lastPatchNoteRead'
+    CACHED_PATCH_NOTES: 'cachedPatchNotes'
 } as const;
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -28,7 +30,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
     closePopup: false,
     pluginDisable: false,
     patchNoteCount: 3,
-    lastPatchNoteRead: 0,
+    cachedPatchNotes: { poe: [], poe2: [] },
     selectedGame: 'poe2'
 };
 
@@ -43,7 +45,7 @@ export async function loadSettings(): Promise<AppSettings> {
                 closePopup: (result[STORAGE_KEYS.CLOSE_POPUP] as boolean) ?? DEFAULT_SETTINGS.closePopup,
                 pluginDisable: (result[STORAGE_KEYS.PLUGIN_DISABLED] as boolean) ?? DEFAULT_SETTINGS.pluginDisable,
                 patchNoteCount: (result[STORAGE_KEYS.PATCH_NOTE_COUNT] as number) ?? DEFAULT_SETTINGS.patchNoteCount,
-                lastPatchNoteRead: (result[STORAGE_KEYS.LAST_PATCH_NOTE_READ] as number) ?? DEFAULT_SETTINGS.lastPatchNoteRead,
+                cachedPatchNotes: (result[STORAGE_KEYS.CACHED_PATCH_NOTES] as Record<GameType, PatchNote[]>) ?? DEFAULT_SETTINGS.cachedPatchNotes,
                 selectedGame: (result[STORAGE_KEYS.SELECTED_GAME] as GameType) ?? DEFAULT_SETTINGS.selectedGame
             };
             resolve(settings);

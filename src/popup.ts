@@ -1,5 +1,5 @@
 // popup.ts
-import { loadSettings, saveSetting, STORAGE_KEYS, GameType } from './storage';
+import { loadSettings, saveSetting, STORAGE_KEYS, GameType, PatchNote, DEFAULT_SETTINGS } from './storage';
 import { fetchPatchNotes, getPatchNoteUrl } from './patch-notes';
 
 // Type assertions for stronger typing
@@ -28,7 +28,7 @@ const patchNotesContent = document.getElementById('patchNotesContent') as HTMLEl
 
 let selectedGame: GameType = 'poe2'; // Default local state, will be updated from storage
 let patchNoteCount = 3;
-let lastPatchNoteRead = 0;
+let cachedPatchNotes: Record<GameType, PatchNote[]> = { poe: [], poe2: [] };
 
 import bgPoe from './assets/poe/bg-keepers.png';
 import bgPoe2 from './assets/poe2/bg-forest.webp';
@@ -63,7 +63,7 @@ const GAME_CONFIG = {
     }
 };
 
-// --- Color Utils ---
+// ... Color Utils (Keep reused logic, omitted for brevity if unchanged, but included here for completeness) ...
 function rgbToHsl(r: number, g: number, b: number) {
     r /= 255; g /= 255; b /= 255;
     const max = Math.max(r, g, b), min = Math.min(r, g, b);
@@ -98,33 +98,27 @@ function hslToHex(h: number, s: number, l: number) {
 async function extractThemeColors(imageUrl: string, fallback: { text: string, accent: string, footer: string }): Promise<{ text: string, accent: string, footer: string }> {
     return new Promise((resolve) => {
         const img = new Image();
-        // Removed crossOrigin as it can cause issues with local extension assets
         img.src = imageUrl;
         img.onload = () => {
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
             if (!ctx) return resolve(fallback);
 
-            // Sample the image (resize to 1x1 to get average)
             canvas.width = 1;
             canvas.height = 1;
             ctx.drawImage(img, 0, 0, 1, 1);
             const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
 
-            // Convert to HSL for adjustment
             let [h, s, l] = rgbToHsl(r, g, b);
 
-            // 1. Accent: Keep Hue, Boost Saturation
             const accentS = Math.max(s * 100, 50);
             const accentL = Math.max(Math.min(l * 100 * 1.5, 80), 60);
             const accent = hslToHex(h, accentS, accentL);
 
-            // 2. Text: Slight Tint
             const textS = Math.min(s * 100, 20);
             const textL = 90;
             const text = hslToHex(h, textS, textL);
 
-            // 3. Footer BG: Very Dark version of Hue
             const footerS = Math.min(s * 100, 20);
             const footerL = 8;
             const footer = hslToHex(h, footerS, footerL);
@@ -145,16 +139,10 @@ function updateMoreButton(game: GameType) {
     }
 }
 
-async function updatePatchNotes(game: GameType) {
+function renderPatchNotes(notes: PatchNote[]) {
     if (!patchNoteList) return;
 
-    patchNoteList.innerHTML = '<li class="loading">로딩중...</li>';
-    updateMoreButton(game);
-
-    const apiGame = game === 'poe' ? 'poe1' : 'poe2';
-    const notes = await fetchPatchNotes(apiGame, patchNoteCount, lastPatchNoteRead);
-
-    patchNoteList.innerHTML = ''; // Clear loading
+    patchNoteList.innerHTML = '';
 
     if (notes.length === 0) {
         patchNoteList.innerHTML = '<li class="empty">패치노트가 없습니다.</li>';
@@ -167,7 +155,6 @@ async function updatePatchNotes(game: GameType) {
         a.href = note.link;
         a.target = '_blank';
 
-        // Wrap title in span for flex truncation
         const titleSpan = document.createElement('span');
         titleSpan.className = 'note-title';
         titleSpan.textContent = note.title;
@@ -177,7 +164,7 @@ async function updatePatchNotes(game: GameType) {
             const badge = document.createElement('span');
             badge.className = 'new-badge';
             badge.textContent = 'N';
-            a.appendChild(badge); // Append after title (right side)
+            a.appendChild(badge);
         }
 
         const dateSpan = document.createElement('span');
@@ -188,37 +175,75 @@ async function updatePatchNotes(game: GameType) {
         li.appendChild(dateSpan);
         patchNoteList.appendChild(li);
     });
+}
 
-    // Update last read timestamp *after* rendering current "New" badges
-    const now = Date.now();
-    saveSetting(STORAGE_KEYS.LAST_PATCH_NOTE_READ, now);
-    lastPatchNoteRead = now; // Update local state for next render within same session
+async function updatePatchNotes(game: GameType) {
+    if (!patchNoteList) return;
+
+    updateMoreButton(game);
+
+    // 1. Initial Render from Cache
+    const initialNotes = cachedPatchNotes[game] || [];
+    if (initialNotes.length > 0) {
+        renderPatchNotes(initialNotes.slice(0, patchNoteCount));
+    } else {
+        patchNoteList.innerHTML = '<li class="loading">로딩중...</li>';
+    }
+
+    // 2. Fetch Fresh Data
+    const apiGame = game === 'poe' ? 'poe1' : 'poe2';
+    const fetchedNotes = await fetchPatchNotes(apiGame, patchNoteCount);
+
+    // 3. Diff and Merge Logic
+    // "New" = Item in fetched list BUT NOT in cached list (by link)
+    // We want to preserve "isNew" status of cached items?
+    // User request: "When overwriting, affix N to non-duplicated posts"
+    // Interpretation: 
+    // - Load previously cached list (Old Cache)
+    // - Fetch new list (New Fetch)
+    // - For each item in New Fetch:
+    //   - If it exists in Old Cache, it is NOT new (isNew = false).
+    //   - If it does NOT exist in Old Cache, it IS new (isNew = true).
+
+    const processedNotes: PatchNote[] = fetchedNotes.map(newNote => {
+        const existsInCache = initialNotes.some(cached => cached.link === newNote.link);
+        return {
+            ...newNote,
+            isNew: !existsInCache // Marked New if not found in previous cache
+        };
+    });
+
+    // 4. Update Cache & Render
+    // Only update and re-render if there's actual data
+    if (processedNotes.length > 0) {
+        cachedPatchNotes[game] = processedNotes;
+        saveSetting(STORAGE_KEYS.CACHED_PATCH_NOTES, cachedPatchNotes);
+        renderPatchNotes(processedNotes);
+    } else if (initialNotes.length === 0) {
+        patchNoteList.innerHTML = '<li class="empty">패치노트를 불러오지 못했습니다.</li>';
+    }
 }
 
 async function updateGameUI(game: GameType) {
-    selectedGame = game; // Update local state
+    selectedGame = game;
     const config = GAME_CONFIG[game];
 
-    // 1. Background
+    // Background & Theme
     document.body.classList.remove('bg-poe', 'bg-poe2');
     document.body.classList.add(config.bgClass);
 
-    // 2. Dynamic Color Extraction
     try {
         const colors = await extractThemeColors(config.bgImage, config.fallback);
         document.body.style.setProperty('--theme-text', colors.text);
         document.body.style.setProperty('--theme-accent', colors.accent);
         document.body.style.setProperty('--theme-footer-bg', colors.footer);
-        console.log(`[Theme] ${game} -> Accent: ${colors.accent}, Footer: ${colors.footer}`);
     } catch (e) {
-        console.warn('Theme color extraction failed completely, using fallback.', e);
-        // Apply fallback directly in case of catastrophe
         document.body.style.setProperty('--theme-text', config.fallback.text);
         document.body.style.setProperty('--theme-accent', config.fallback.accent);
         document.body.style.setProperty('--theme-footer-bg', config.fallback.footer);
     }
 
-    // 2. Logos (Active/Inactive)
+    // Logos
     if (game === 'poe') {
         logoPoe.classList.remove('inactive');
         logoPoe2.classList.add('inactive');
@@ -227,46 +252,40 @@ async function updateGameUI(game: GameType) {
         logoPoe2.classList.remove('inactive');
     }
 
-    // 3. Launch Button URL
+    // URL & Buttons
     launchBtn.dataset.url = config.url;
-
-    // 4. Update Nav Buttons
     if (btnHomepage) btnHomepage.href = config.homepageUrl;
     if (btnTrade) btnTrade.href = config.tradeUrl;
 
-    // 5. Fix Guide Visibility
     if (config.showFixGuide) {
         fixGuideBtn.style.display = 'flex';
     } else {
         fixGuideBtn.style.display = 'none';
     }
 
-    // 6. Update Patch Notes
+    // Update Patch Notes
     updatePatchNotes(game);
 }
 
-// Mutual Exclusion Drawer Logic
+// ... Drawer and Event Listeners (Same as before) ...
+
 function toggleDrawerStack(target: 'settings' | 'patchNotes') {
     const isSettingsTarget = target === 'settings';
 
     if (isSettingsTarget) {
-        // Toggle Settings
         const willOpen = !settingsContent.classList.contains('open');
         settingsContent.classList.toggle('open', willOpen);
         settingsToggle.classList.toggle('active', willOpen);
 
-        // Close Patch Notes
         if (willOpen) {
             patchNotesContent.classList.remove('open');
             patchNotesToggle.classList.remove('active');
         }
     } else {
-        // Toggle Patch Notes
         const willOpen = !patchNotesContent.classList.contains('open');
         patchNotesContent.classList.toggle('open', willOpen);
         patchNotesToggle.classList.toggle('active', willOpen);
 
-        // Close Settings
         if (willOpen) {
             settingsContent.classList.remove('open');
             settingsToggle.classList.remove('active');
@@ -274,15 +293,9 @@ function toggleDrawerStack(target: 'settings' | 'patchNotes') {
     }
 }
 
-if (settingsToggle) {
-    settingsToggle.addEventListener('click', () => toggleDrawerStack('settings'));
-}
+if (settingsToggle) settingsToggle.addEventListener('click', () => toggleDrawerStack('settings'));
+if (patchNotesToggle) patchNotesToggle.addEventListener('click', () => toggleDrawerStack('patchNotes'));
 
-if (patchNotesToggle) {
-    patchNotesToggle.addEventListener('click', () => toggleDrawerStack('patchNotes'));
-}
-
-// Logo Click Listeners
 logoPoe.addEventListener('click', () => {
     if (selectedGame !== 'poe') {
         updateGameUI('poe');
@@ -297,7 +310,6 @@ logoPoe2.addEventListener('click', () => {
     }
 });
 
-// Save settings on change
 closeTabToggle.addEventListener('change', () => {
     saveSetting(STORAGE_KEYS.CLOSE_TAB, closeTabToggle.checked);
 });
@@ -306,14 +318,12 @@ closePopupToggle.addEventListener('change', () => {
     saveSetting(STORAGE_KEYS.CLOSE_POPUP, closePopupToggle.checked);
 });
 
-// Plugin Disable Toggle Logic
 pluginDisableToggle.addEventListener('change', () => {
     const isDisabled = pluginDisableToggle.checked;
     saveSetting(STORAGE_KEYS.PLUGIN_DISABLED, isDisabled);
     updatePluginDisabledState(isDisabled);
 });
 
-// Patch Note Count Setting
 patchNoteCountInput.addEventListener('change', () => {
     let val = parseInt(patchNoteCountInput.value);
     if (val < 1) val = 1;
@@ -322,64 +332,50 @@ patchNoteCountInput.addEventListener('change', () => {
 
     patchNoteCount = val;
     saveSetting(STORAGE_KEYS.PATCH_NOTE_COUNT, val);
-
-    // Refresh list with new count
     updatePatchNotes(selectedGame);
 });
 
 function updatePluginDisabledState(isDisabled: boolean) {
     if (isDisabled) {
         document.body.classList.add('plugin-disabled');
-        launchBtn.style.pointerEvents = 'none'; // Disable link click
+        launchBtn.style.pointerEvents = 'none';
         launchBtn.removeAttribute('href');
         if (btnHomepage) btnHomepage.style.pointerEvents = 'none';
         if (btnTrade) btnTrade.style.pointerEvents = 'none';
     } else {
         document.body.classList.remove('plugin-disabled');
         launchBtn.style.pointerEvents = 'auto';
-        launchBtn.href = '#'; // Restore href
+        launchBtn.href = '#';
         if (btnHomepage) btnHomepage.style.pointerEvents = 'auto';
         if (btnTrade) btnTrade.style.pointerEvents = 'auto';
     }
 }
 
-// Launch Game Button Logic
 launchBtn.addEventListener('click', (e) => {
     e.preventDefault();
-
-    if (document.body.classList.contains('plugin-disabled')) {
-        return; // Do nothing if disabled
-    }
+    if (document.body.classList.contains('plugin-disabled')) return;
 
     const isClosePopupFn = closePopupToggle.checked;
-    const targetUrl = launchBtn.dataset.url || GAME_CONFIG.poe2.url; // Fallback
+    const targetUrl = launchBtn.dataset.url || GAME_CONFIG.poe2.url;
 
-    chrome.tabs.create({ url: targetUrl }, (tab) => {
-        if (tab && tab.id) {
-            // Logic handled by content scripts
-        }
-
-        // Handle "Close Popup" only after tab creation is initiated
-        if (isClosePopupFn) {
-            window.close();
-        }
+    chrome.tabs.create({ url: targetUrl }, () => {
+        if (isClosePopupFn) window.close();
     });
 });
 
-// Initialize Settings
 document.addEventListener('DOMContentLoaded', async () => {
     const settings = await loadSettings();
 
     closeTabToggle.checked = settings.closeTab;
     closePopupToggle.checked = settings.closePopup;
 
-    const isDisabled = settings.pluginDisable; // Fixed property name
+    const isDisabled = settings.pluginDisable;
     pluginDisableToggle.checked = isDisabled;
     updatePluginDisabledState(isDisabled);
 
     patchNoteCount = settings.patchNoteCount;
     patchNoteCountInput.value = patchNoteCount.toString();
-    lastPatchNoteRead = settings.lastPatchNoteRead;
+    cachedPatchNotes = settings.cachedPatchNotes || DEFAULT_SETTINGS.cachedPatchNotes; // Load cache
 
     updateGameUI(settings.selectedGame);
 });
