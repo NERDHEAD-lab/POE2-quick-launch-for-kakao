@@ -19,7 +19,7 @@
 버그 제보나 기능 건의도 언제나 환영합니다!
 
 <!-- - [POE/POE2 자동 실행 플러그인](https://gall.dcinside.com/poe2/000000) -->
-- [GitHub 이슈 트래커](https://github.com/NERDHEAD-lab/POE2-KG-Client-Patch-Butler/issues)
+- [GitHub 이슈 트래커](https://github.com/NERDHEAD-lab/POE2-quick-launch-for-kakao/issues)
 
 
 여기저기서 후원하기 어디있냐고 찾으시길레 정리해두긴 하는데,
