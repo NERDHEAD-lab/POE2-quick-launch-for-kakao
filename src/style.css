@@ -216,6 +216,48 @@ body.bg-poe2 {
   filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.5));
 }
 
+/* Support Badge */
+.support-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  margin: 30px auto -12px auto;
+  /* 30px top to clear logo overlap */
+  padding: 3px 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  position: relative;
+  z-index: 35;
+  width: fit-content;
+}
+
+.support-badge:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--theme-accent, #dfcf99);
+  transform: translateY(-1px);
+}
+
+.badge-icon {
+  font-size: 10px;
+  color: #dfcf99;
+  /* Coffee/Gold color */
+}
+
+.badge-text {
+  font-size: 10px;
+  color: #bbb;
+  font-family: 'Tahoma', sans-serif;
+  letter-spacing: 0.02em;
+}
+
+.support-badge:hover .badge-text {
+  color: var(--theme-accent, #dfcf99);
+}
+
 /* Horizontal Logo Layout */
 .logo-container {
   display: flex;
