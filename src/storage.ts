@@ -6,26 +6,29 @@
 export type GameType = 'poe' | 'poe2';
 
 export interface AppSettings {
-    autoStartEnabled: boolean; // Legacy key, kept for compatibility if needed
     closeTab: boolean;
     closePopup: boolean;
-    isPluginDisabled: boolean;
+    pluginDisable: boolean;
+    patchNoteCount: number; // 1~20
+    lastPatchNoteRead: number; // Timestamp
     selectedGame: GameType;
 }
 
 export const STORAGE_KEYS = {
-    AUTO_START: 'autoStartEnabled',
     CLOSE_TAB: 'closeTab',
     CLOSE_POPUP: 'closePopup',
-    PLUGIN_DISABLED: 'isPluginDisabled',
-    SELECTED_GAME: 'selectedGame'
+    PLUGIN_DISABLED: 'pluginDisable', // Renamed key for consistency
+    SELECTED_GAME: 'selectedGame',
+    PATCH_NOTE_COUNT: 'patchNoteCount',
+    LAST_PATCH_NOTE_READ: 'lastPatchNoteRead'
 } as const;
 
 export const DEFAULT_SETTINGS: AppSettings = {
-    autoStartEnabled: false,
     closeTab: false,
     closePopup: false,
-    isPluginDisabled: false,
+    pluginDisable: false,
+    patchNoteCount: 3,
+    lastPatchNoteRead: 0,
     selectedGame: 'poe2'
 };
 
@@ -36,10 +39,11 @@ export async function loadSettings(): Promise<AppSettings> {
     return new Promise((resolve) => {
         chrome.storage.local.get(null, (result: { [key: string]: any }) => {
             const settings: AppSettings = {
-                autoStartEnabled: (result[STORAGE_KEYS.AUTO_START] as boolean) ?? DEFAULT_SETTINGS.autoStartEnabled,
                 closeTab: (result[STORAGE_KEYS.CLOSE_TAB] as boolean) ?? DEFAULT_SETTINGS.closeTab,
                 closePopup: (result[STORAGE_KEYS.CLOSE_POPUP] as boolean) ?? DEFAULT_SETTINGS.closePopup,
-                isPluginDisabled: (result[STORAGE_KEYS.PLUGIN_DISABLED] as boolean) ?? DEFAULT_SETTINGS.isPluginDisabled,
+                pluginDisable: (result[STORAGE_KEYS.PLUGIN_DISABLED] as boolean) ?? DEFAULT_SETTINGS.pluginDisable,
+                patchNoteCount: (result[STORAGE_KEYS.PATCH_NOTE_COUNT] as number) ?? DEFAULT_SETTINGS.patchNoteCount,
+                lastPatchNoteRead: (result[STORAGE_KEYS.LAST_PATCH_NOTE_READ] as number) ?? DEFAULT_SETTINGS.lastPatchNoteRead,
                 selectedGame: (result[STORAGE_KEYS.SELECTED_GAME] as GameType) ?? DEFAULT_SETTINGS.selectedGame
             };
             resolve(settings);

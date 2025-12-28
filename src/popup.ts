@@ -1,5 +1,6 @@
 // popup.ts
 import { loadSettings, saveSetting, STORAGE_KEYS, GameType } from './storage';
+import { fetchPatchNotes, getPatchNoteUrl } from './patch-notes';
 
 // Type assertions for stronger typing
 const closeTabToggle = document.getElementById('closeTabToggle') as HTMLInputElement;
@@ -9,6 +10,11 @@ const launchBtn = document.getElementById('launchBtn') as HTMLAnchorElement;
 const fixGuideBtn = document.getElementById('fixGuideBtn') as HTMLAnchorElement;
 const btnHomepage = document.getElementById('btnHomepage') as HTMLAnchorElement;
 const btnTrade = document.getElementById('btnTrade') as HTMLAnchorElement;
+
+// Patch Note Elements
+const patchNoteList = document.getElementById('patchNoteList') as HTMLUListElement;
+const patchNoteMoreBtn = document.getElementById('patchNoteMoreBtn') as HTMLAnchorElement;
+const patchNoteCountInput = document.getElementById('patchNoteCountInput') as HTMLInputElement;
 
 // Game Switcher Elements
 const logoPoe = document.getElementById('logoPoe') as HTMLImageElement;
@@ -21,6 +27,8 @@ const patchNotesToggle = document.getElementById('patchNotesToggle') as HTMLElem
 const patchNotesContent = document.getElementById('patchNotesContent') as HTMLElement;
 
 let selectedGame: GameType = 'poe2'; // Default local state, will be updated from storage
+let patchNoteCount = 3;
+let lastPatchNoteRead = 0;
 
 import bgPoe from './assets/poe/bg-keepers.png';
 import bgPoe2 from './assets/poe2/bg-forest.webp';
@@ -130,6 +138,63 @@ async function extractThemeColors(imageUrl: string, fallback: { text: string, ac
     });
 }
 
+function updateMoreButton(game: GameType) {
+    if (patchNoteMoreBtn) {
+        const apiGame = game === 'poe' ? 'poe1' : 'poe2';
+        patchNoteMoreBtn.href = getPatchNoteUrl(apiGame);
+    }
+}
+
+async function updatePatchNotes(game: GameType) {
+    if (!patchNoteList) return;
+
+    patchNoteList.innerHTML = '<li class="loading">로딩중...</li>';
+    updateMoreButton(game);
+
+    const apiGame = game === 'poe' ? 'poe1' : 'poe2';
+    const notes = await fetchPatchNotes(apiGame, patchNoteCount, lastPatchNoteRead);
+
+    patchNoteList.innerHTML = ''; // Clear loading
+
+    if (notes.length === 0) {
+        patchNoteList.innerHTML = '<li class="empty">패치노트가 없습니다.</li>';
+        return;
+    }
+
+    notes.forEach(note => {
+        const li = document.createElement('li');
+        const a = document.createElement('a');
+        a.href = note.link;
+        a.target = '_blank';
+
+        // Wrap title in span for flex truncation
+        const titleSpan = document.createElement('span');
+        titleSpan.className = 'note-title';
+        titleSpan.textContent = note.title;
+        a.appendChild(titleSpan);
+
+        if (note.isNew) {
+            const badge = document.createElement('span');
+            badge.className = 'new-badge';
+            badge.textContent = 'N';
+            a.appendChild(badge); // Append after title (right side)
+        }
+
+        const dateSpan = document.createElement('span');
+        dateSpan.className = 'note-date';
+        dateSpan.textContent = note.date;
+
+        li.appendChild(a);
+        li.appendChild(dateSpan);
+        patchNoteList.appendChild(li);
+    });
+
+    // Update last read timestamp *after* rendering current "New" badges
+    const now = Date.now();
+    saveSetting(STORAGE_KEYS.LAST_PATCH_NOTE_READ, now);
+    lastPatchNoteRead = now; // Update local state for next render within same session
+}
+
 async function updateGameUI(game: GameType) {
     selectedGame = game; // Update local state
     const config = GAME_CONFIG[game];
@@ -175,6 +240,9 @@ async function updateGameUI(game: GameType) {
     } else {
         fixGuideBtn.style.display = 'none';
     }
+
+    // 6. Update Patch Notes
+    updatePatchNotes(game);
 }
 
 // Mutual Exclusion Drawer Logic
@@ -245,6 +313,20 @@ pluginDisableToggle.addEventListener('change', () => {
     updatePluginDisabledState(isDisabled);
 });
 
+// Patch Note Count Setting
+patchNoteCountInput.addEventListener('change', () => {
+    let val = parseInt(patchNoteCountInput.value);
+    if (val < 1) val = 1;
+    if (val > 20) val = 20;
+    patchNoteCountInput.value = val.toString();
+
+    patchNoteCount = val;
+    saveSetting(STORAGE_KEYS.PATCH_NOTE_COUNT, val);
+
+    // Refresh list with new count
+    updatePatchNotes(selectedGame);
+});
+
 function updatePluginDisabledState(isDisabled: boolean) {
     if (isDisabled) {
         document.body.classList.add('plugin-disabled');
@@ -291,9 +373,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     closeTabToggle.checked = settings.closeTab;
     closePopupToggle.checked = settings.closePopup;
 
-    const isDisabled = settings.isPluginDisabled;
+    const isDisabled = settings.pluginDisable; // Fixed property name
     pluginDisableToggle.checked = isDisabled;
     updatePluginDisabledState(isDisabled);
+
+    patchNoteCount = settings.patchNoteCount;
+    patchNoteCountInput.value = patchNoteCount.toString();
+    lastPatchNoteRead = settings.lastPatchNoteRead;
 
     updateGameUI(settings.selectedGame);
 });

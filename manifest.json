@@ -32,6 +32,7 @@
         }
     ],
     "host_permissions": [
+        "https://poe.game.daum.net/",
         "*://*.game.daum.net/*",
         "*://*.daum.net/*"
     ],

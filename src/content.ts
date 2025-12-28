@@ -22,7 +22,7 @@ window.addEventListener('hashchange', async () => {
 });
 
 function dispatchPageLogic(settings: AppSettings) {
-    if (settings.isPluginDisabled) {
+    if (settings.pluginDisable) {
         console.log('Plugin is disabled by user setting. Skipping all logic.');
         return;
     }
