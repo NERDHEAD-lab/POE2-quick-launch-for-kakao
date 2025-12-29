@@ -1,5 +1,5 @@
 // popup.ts
-import { loadSettings, saveSetting, STORAGE_KEYS, GameType, PatchNote, DEFAULT_SETTINGS, Notice } from './storage';
+import { loadSettings, saveSetting, STORAGE_KEYS, GameType, PatchNote, DEFAULT_SETTINGS, Notice, ThemeColors } from './storage';
 import { fetchPatchNotes, getPatchNoteUrl } from './patch-notes';
 import { fetchNotices } from './notice';
 
@@ -32,6 +32,7 @@ let selectedGame: GameType = 'poe2'; // Default local state, will be updated fro
 let patchNoteCount = 3;
 let cachedPatchNotes: Record<GameType, PatchNote[]> = { poe: [], poe2: [] };
 let cachedNotices: Notice[] = [];
+let cachedThemeColors: Record<string, ThemeColors> = {};
 
 import bgPoe from './assets/poe/bg-keepers.png';
 import bgPoe2 from './assets/poe2/bg-forest.webp';
@@ -131,6 +132,12 @@ async function extractThemeColors(imageUrl: string, fallback: { text: string, ac
             resolve(fallback);
         };
     });
+}
+
+function applyThemeColors(colors: ThemeColors) {
+    document.body.style.setProperty('--theme-text', colors.text);
+    document.body.style.setProperty('--theme-accent', colors.accent);
+    document.body.style.setProperty('--theme-footer-bg', colors.footer);
 }
 
 function updateMoreButton(game: GameType) {
@@ -258,16 +265,27 @@ async function updateGameUI(game: GameType) {
     document.body.classList.remove('bg-poe', 'bg-poe2');
     document.body.classList.add(config.bgClass);
 
-    try {
-        const colors = await extractThemeColors(config.bgImage, config.fallback);
-        document.body.style.setProperty('--theme-text', colors.text);
-        document.body.style.setProperty('--theme-accent', colors.accent);
-        document.body.style.setProperty('--theme-footer-bg', colors.footer);
-    } catch (e) {
-        document.body.style.setProperty('--theme-text', config.fallback.text);
-        document.body.style.setProperty('--theme-accent', config.fallback.accent);
-        document.body.style.setProperty('--theme-footer-bg', config.fallback.footer);
+    // Theme Colors (SWR)
+    const cached = cachedThemeColors[config.bgImage];
+    if (cached) {
+        applyThemeColors(cached);
     }
+
+    // Always fetch/re-calculate in background to handle updates
+    extractThemeColors(config.bgImage, config.fallback).then(newColors => {
+        // Compare new vs cached to decide if update needed
+        // Simple JSON stringify comparison
+        if (!cached || JSON.stringify(newColors) !== JSON.stringify(cached)) {
+            applyThemeColors(newColors);
+            cachedThemeColors[config.bgImage] = newColors;
+            saveSetting(STORAGE_KEYS.CACHED_THEME_COLORS, cachedThemeColors);
+        }
+    }).catch(() => {
+        // Only apply fallback if no cache existed
+        if (!cached) {
+            applyThemeColors(config.fallback);
+        }
+    });
 
     // Logos
     if (game === 'poe') {
@@ -425,6 +443,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     patchNoteCountInput.value = patchNoteCount.toString();
     cachedPatchNotes = settings.cachedPatchNotes || DEFAULT_SETTINGS.cachedPatchNotes; // Load cache
     cachedNotices = settings.cachedNotices || DEFAULT_SETTINGS.cachedNotices;
+    cachedThemeColors = settings.cachedThemeColors || DEFAULT_SETTINGS.cachedThemeColors;
 
     updateGameUI(settings.selectedGame);
 });
