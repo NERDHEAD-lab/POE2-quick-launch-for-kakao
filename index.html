@@ -96,10 +96,16 @@
                 return out;
             },
             heading({ text, depth }) {
-                // Generate ID from text to support hash navigation
-                return `<h${depth} id="${text}">
+                const slug = text
+                    .toLowerCase()
+                    .trim()
+                    .replace(/[^\w\s\-\uAC00-\uD7A3]+/g, '') // Remove non-word chars (except spaces/hyphens/Hangul)
+                    .replace(/[\s]+/g, '-') // Replace spaces with -
+                    .replace(/-+/g, '-'); // Collapse dashes
+
+                return `<h${depth} id="${slug}">
                             ${text}
-                            <a href="#${text}" class="anchor-link" title="Copy Link" aria-label="Copy Link">🔗</a>
+                            <a href="#${slug}" class="anchor-link" title="Copy Link" aria-label="Copy Link">🔗</a>
                         </h${depth}>`;
             }
         };
