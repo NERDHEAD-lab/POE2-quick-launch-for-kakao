@@ -68,12 +68,24 @@
             opacity: 1;
         }
 
+        /* Ensure headers only highlight the text content, not the full width */
+        .markdown-body h1,
+        .markdown-body h2,
+        .markdown-body h3,
+        .markdown-body h4,
+        .markdown-body h5,
+        .markdown-body h6 {
+            width: fit-content;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
         /* Hash target highlight */
-        :target {
+        :target,
+        .initial-target {
             animation: highlight-pulse 2s 1;
             background-color: rgba(226, 255, 0, 0.4);
             /* Persistent fluorescent background */
-            border-radius: 4px;
             box-shadow: 0 0 10px rgba(226, 255, 0, 0.5);
         }
 
@@ -181,11 +193,8 @@
                     console.error('Failed to copy: ', err);
                 });
 
-                // Update URL without reload
-                history.pushState(null, null, hash);
-
-                // Optional: Scroll to it manually if needed, though usually already in view
-                // document.getElementById(hash.substring(1)).scrollIntoView();
+                // Force hash update to trigger CSS :target
+                window.location.hash = hash;
             }
         });
 
@@ -213,20 +222,25 @@
                     breaks: true
                 });
 
-                // Handle hash navigation after content load
+
+                // Handle hash navigation after content load (Safe Method)
                 if (window.location.hash) {
-                    setTimeout(() => {
-                        try {
-                            const hash = decodeURIComponent(window.location.hash);
-                            // Try to find element by ID (marked generates IDs for headers)
-                            const target = document.getElementById(hash.substring(1));
-                            if (target) {
-                                target.scrollIntoView();
-                            }
-                        } catch (e) {
-                            console.warn("Failed to scroll to hash:", e);
+                    try {
+                        const hash = decodeURIComponent(window.location.hash);
+                        const target = document.getElementById(hash.substring(1));
+                        if (target) {
+                            target.scrollIntoView();
+                            // Manually apply highlight class since :target might not trigger on lazy load
+                            target.classList.add('initial-target');
+
+                            // Remove the class cleanly when the user navigates away so native :target takes over
+                            window.addEventListener('hashchange', () => {
+                                target.classList.remove('initial-target');
+                            }, { once: true });
                         }
-                    }, 100);
+                    } catch (e) {
+                        console.warn("Failed to apply initial hash highlight:", e);
+                    }
                 }
             } catch (error) {
                 console.error("Error loading markdown:", error);
