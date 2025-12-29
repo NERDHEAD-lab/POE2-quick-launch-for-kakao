@@ -28,6 +28,45 @@
             width: 100%;
             display: block;
         }
+
+        .anchor-link {
+            text-decoration: none;
+            margin-left: 0.5rem;
+            opacity: 0;
+            cursor: pointer;
+            transition: opacity 0.2s;
+            font-size: 0.8em;
+            vertical-align: middle;
+        }
+
+        h1:hover .anchor-link,
+        h2:hover .anchor-link,
+        h3:hover .anchor-link,
+        h4:hover .anchor-link,
+        h5:hover .anchor-link,
+        h6:hover .anchor-link {
+            opacity: 1;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 4px;
+            font-size: 14px;
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        .toast.show {
+            opacity: 1;
+        }
     </style>
 </head>
 
@@ -55,6 +94,13 @@
                 }
                 const out = `<img src="${href}" alt="${text}"${title ? ` title="${title}"` : ""} style="max-width: 100%;">`;
                 return out;
+            },
+            heading({ text, depth }) {
+                // Generate ID from text to support hash navigation
+                return `<h${depth} id="${text}">
+                            ${text}
+                            <a href="#${text}" class="anchor-link" title="Copy Link" aria-label="Copy Link">🔗</a>
+                        </h${depth}>`;
             }
         };
 
@@ -70,7 +116,47 @@
             });
         };
 
+        function showToast(message) {
+            let toast = document.getElementById('toast-notification');
+            if (!toast) {
+                toast = document.createElement('div');
+                toast.id = 'toast-notification';
+                toast.className = 'toast';
+                document.body.appendChild(toast);
+            }
+            toast.textContent = message;
+            toast.classList.add('show');
+
+            // Clear existing timeout if any to prevent early dismissal
+            if (toast.timeoutId) clearTimeout(toast.timeoutId);
+
+            toast.timeoutId = setTimeout(() => {
+                toast.classList.remove('show');
+            }, 2000);
+        }
+
         marked.use({ renderer });
+
+        // Global click listener for anchor links
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('anchor-link')) {
+                e.preventDefault();
+                const hash = e.target.getAttribute('href');
+                const url = window.location.origin + window.location.pathname + window.location.search + hash;
+
+                navigator.clipboard.writeText(url).then(() => {
+                    showToast('링크가 복사되었습니다');
+                }).catch(err => {
+                    console.error('Failed to copy: ', err);
+                });
+
+                // Update URL without reload
+                history.pushState(null, null, hash);
+
+                // Optional: Scroll to it manually if needed, though usually already in view
+                // document.getElementById(hash.substring(1)).scrollIntoView();
+            }
+        });
 
         async function loadMarkdown() {
             const params = new URLSearchParams(window.location.search);
