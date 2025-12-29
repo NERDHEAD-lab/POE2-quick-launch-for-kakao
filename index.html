@@ -67,6 +67,31 @@
         .toast.show {
             opacity: 1;
         }
+
+        /* Hash target highlight */
+        :target {
+            animation: highlight-pulse 2s 1;
+            background-color: rgba(226, 255, 0, 0.4);
+            /* Persistent fluorescent background */
+            border-radius: 4px;
+            box-shadow: 0 0 10px rgba(226, 255, 0, 0.5);
+        }
+
+        @keyframes highlight-pulse {
+            0% {
+                background-color: rgba(226, 255, 0, 1);
+                transform: scale(1.01);
+            }
+
+            50% {
+                background-color: rgba(226, 255, 0, 0.8);
+            }
+
+            100% {
+                background-color: rgba(226, 255, 0, 0.4);
+                transform: scale(1);
+            }
+        }
     </style>
 </head>
 
