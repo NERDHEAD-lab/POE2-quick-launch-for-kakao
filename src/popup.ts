@@ -1,13 +1,15 @@
 // popup.ts
-import { loadSettings, saveSetting, STORAGE_KEYS, GameType, PatchNote, DEFAULT_SETTINGS } from './storage';
+import { loadSettings, saveSetting, STORAGE_KEYS, GameType, PatchNote, DEFAULT_SETTINGS, Notice } from './storage';
 import { fetchPatchNotes, getPatchNoteUrl } from './patch-notes';
+import { fetchNotices } from './notice';
 
 // Type assertions for stronger typing
 const closeTabToggle = document.getElementById('closeTabToggle') as HTMLInputElement;
 const closePopupToggle = document.getElementById('closePopupToggle') as HTMLInputElement;
+const showNoticesToggle = document.getElementById('showNoticesToggle') as HTMLInputElement;
 const pluginDisableToggle = document.getElementById('pluginDisableToggle') as HTMLInputElement;
 const launchBtn = document.getElementById('launchBtn') as HTMLAnchorElement;
-const fixGuideBtn = document.getElementById('fixGuideBtn') as HTMLAnchorElement;
+const noticeContainer = document.getElementById('noticeContainer') as HTMLDivElement;
 const btnHomepage = document.getElementById('btnHomepage') as HTMLAnchorElement;
 const btnTrade = document.getElementById('btnTrade') as HTMLAnchorElement;
 
@@ -29,6 +31,7 @@ const patchNotesContent = document.getElementById('patchNotesContent') as HTMLEl
 let selectedGame: GameType = 'poe2'; // Default local state, will be updated from storage
 let patchNoteCount = 3;
 let cachedPatchNotes: Record<GameType, PatchNote[]> = { poe: [], poe2: [] };
+let cachedNotices: Notice[] = [];
 
 import bgPoe from './assets/poe/bg-keepers.png';
 import bgPoe2 from './assets/poe2/bg-forest.webp';
@@ -41,7 +44,6 @@ const GAME_CONFIG = {
         url: 'https://poe.game.daum.net#autoStart',
         homepageUrl: 'https://poe.game.daum.net/',
         tradeUrl: 'https://poe.game.daum.net/trade',
-        showFixGuide: false,
         fallback: {
             text: '#c8c8c8',
             accent: '#dfcf99', // Gold
@@ -54,7 +56,6 @@ const GAME_CONFIG = {
         url: 'https://pathofexile2.game.daum.net/main#autoStart',
         homepageUrl: 'https://pathofexile2.game.daum.net/main',
         tradeUrl: 'https://poe.game.daum.net/trade2',
-        showFixGuide: true,
         fallback: {
             text: '#b5c2b5',
             accent: '#aaddaa', // Mint
@@ -137,6 +138,31 @@ function updateMoreButton(game: GameType) {
         const apiGame = game === 'poe' ? 'poe1' : 'poe2';
         patchNoteMoreBtn.href = getPatchNoteUrl(apiGame);
     }
+}
+
+function renderNotices(notices: Notice[], game: GameType) {
+    if (!noticeContainer) return;
+    noticeContainer.innerHTML = '';
+
+    const currentNotices = notices.filter(n => n.targetGame.includes(game));
+
+    currentNotices.forEach(notice => {
+        const a = document.createElement('a');
+        a.className = 'sub-link';
+        a.href = notice.link;
+        a.target = '_blank';
+
+        const hoverOverlay = document.createElement('span');
+        hoverOverlay.className = 'hover-overlay';
+
+        const btnText = document.createElement('span');
+        btnText.className = 'btn-text';
+        btnText.textContent = notice.title;
+
+        a.appendChild(hoverOverlay);
+        a.appendChild(btnText);
+        noticeContainer.appendChild(a);
+    });
 }
 
 function renderPatchNotes(notes: PatchNote[]) {
@@ -257,11 +283,21 @@ async function updateGameUI(game: GameType) {
     if (btnHomepage) btnHomepage.href = config.homepageUrl;
     if (btnTrade) btnTrade.href = config.tradeUrl;
 
-    if (config.showFixGuide) {
-        fixGuideBtn.style.display = 'flex';
-    } else {
-        fixGuideBtn.style.display = 'none';
-    }
+    // Notices (Stale-While-Revalidate)
+    // 1. Render Cached
+    renderNotices(cachedNotices, game);
+
+    // 2. Fetch & Update if changed
+    fetchNotices().then(newNotices => {
+        // Simple equality check by stringify
+        const isChanged = JSON.stringify(newNotices) !== JSON.stringify(cachedNotices);
+
+        if (isChanged && newNotices.length > 0) {
+            cachedNotices = newNotices;
+            saveSetting(STORAGE_KEYS.CACHED_NOTICES, newNotices);
+            renderNotices(newNotices, game);
+        }
+    });
 
     // Update Patch Notes
     updatePatchNotes(game);
@@ -318,6 +354,14 @@ closePopupToggle.addEventListener('change', () => {
     saveSetting(STORAGE_KEYS.CLOSE_POPUP, closePopupToggle.checked);
 });
 
+showNoticesToggle.addEventListener('change', () => {
+    const isShown = showNoticesToggle.checked;
+    saveSetting(STORAGE_KEYS.SHOW_NOTICES, isShown);
+    if (noticeContainer) {
+        noticeContainer.style.display = isShown ? 'flex' : 'none';
+    }
+});
+
 pluginDisableToggle.addEventListener('change', () => {
     const isDisabled = pluginDisableToggle.checked;
     saveSetting(STORAGE_KEYS.PLUGIN_DISABLED, isDisabled);
@@ -366,6 +410,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     closeTabToggle.checked = settings.closeTab;
     closePopupToggle.checked = settings.closePopup;
+    showNoticesToggle.checked = settings.showNotices;
+
+    // Apply visibility immediately
+    if (noticeContainer) {
+        noticeContainer.style.display = settings.showNotices ? 'flex' : 'none';
+    }
 
     const isDisabled = settings.pluginDisable;
     pluginDisableToggle.checked = isDisabled;
@@ -374,6 +424,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     patchNoteCount = settings.patchNoteCount;
     patchNoteCountInput.value = patchNoteCount.toString();
     cachedPatchNotes = settings.cachedPatchNotes || DEFAULT_SETTINGS.cachedPatchNotes; // Load cache
+    cachedNotices = settings.cachedNotices || DEFAULT_SETTINGS.cachedNotices;
 
     updateGameUI(settings.selectedGame);
 });
