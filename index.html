@@ -95,6 +95,22 @@
                 document.getElementById("content").innerHTML = marked.parse(text, {
                     breaks: true
                 });
+
+                // Handle hash navigation after content load
+                if (window.location.hash) {
+                    setTimeout(() => {
+                        try {
+                            const hash = decodeURIComponent(window.location.hash);
+                            // Try to find element by ID (marked generates IDs for headers)
+                            const target = document.getElementById(hash.substring(1));
+                            if (target) {
+                                target.scrollIntoView();
+                            }
+                        } catch (e) {
+                            console.warn("Failed to scroll to hash:", e);
+                        }
+                    }, 100);
+                }
             } catch (error) {
                 console.error("Error loading markdown:", error);
                 document.getElementById("content").innerHTML =
