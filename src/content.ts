@@ -1,5 +1,6 @@
 import { SELECTORS } from './domSelectors';
 import { loadSettings, AppSettings } from './storage';
+import { safeClick, observeAndInteract } from './utils/dom';
 
 console.log('POE / POE2 Quick Launch Content Script Loaded');
 
@@ -235,7 +236,7 @@ function handlePoeAutoStart(settings: AppSettings) {
             // Unconditional Cleanup for POE1 as well (requested generally)
             // Perform BEFORE click to ensure visual update
             history.replaceState(null, '', window.location.pathname + window.location.search);
-            
+
             console.log('Found POE Start Button, clicking...');
             safeClick(startBtn);
             clearInterval(pollForButton);
@@ -256,7 +257,7 @@ function handlePoeAutoStart(settings: AppSettings) {
 }
 
 function performSecurityPageLogic() {
-    const checkAndClick = (obs?: MutationObserver) => {
+    observeAndInteract((obs) => {
         const buttons = Array.from(document.querySelectorAll(SELECTORS.SECURITY.CONFIRM_BUTTONS.join(', ')));
 
         // Priority 0: Designated PC "Confirm" Button
@@ -280,18 +281,11 @@ function performSecurityPageLogic() {
             return true;
         }
         return false;
-    };
-
-    if (!checkAndClick()) {
-        const observer = new MutationObserver((_mutations, obs) => {
-            checkAndClick(obs);
-        });
-        observer.observe(document.body, { childList: true, subtree: true });
-    }
+    });
 }
 
 function performLauncherPageLogic(settings: AppSettings) {
-    const checkAndClick = (obs?: MutationObserver) => {
+    observeAndInteract((obs) => {
         const query = SELECTORS.LAUNCHER.GAME_START_BUTTONS.join(', ');
         const buttons = Array.from(document.querySelectorAll(query + ', .popup__link--confirm'));
 
@@ -352,15 +346,7 @@ function performLauncherPageLogic(settings: AppSettings) {
             return true;
         }
         return false;
-    };
-
-    if (!checkAndClick()) {
-        console.log('Loop not found immediately. Starting observer...');
-        const observer = new MutationObserver((_mutations, obs) => {
-            checkAndClick(obs);
-        });
-        observer.observe(document.body, { childList: true, subtree: true });
-    }
+    });
 }
 
 function startPolling(settings: AppSettings) {
@@ -377,7 +363,7 @@ function startPolling(settings: AppSettings) {
             history.replaceState(null, '', window.location.pathname + window.location.search);
             try {
                 if (window.location.hash.includes('autoStart')) {
-                     window.location.hash = '';
+                    window.location.hash = '';
                 }
             } catch (e) { /* ignore */ }
 
@@ -467,32 +453,7 @@ function manageIntroModal(preferTodayClose: boolean) {
     setTimeout(() => clearInterval(interval), 10000);
 }
 
-function safeClick(element: HTMLElement) {
-    if (!element) return;
 
-    if (element instanceof HTMLAnchorElement && element.href.toLowerCase().startsWith('javascript:')) {
-        const event = new MouseEvent('click', {
-            view: window,
-            bubbles: true,
-            cancelable: true
-        });
-        event.preventDefault();
-        element.dispatchEvent(event);
-        return;
-    }
-
-    if (typeof element.click === 'function') {
-        element.click();
-        return;
-    }
-
-    const event = new MouseEvent('click', {
-        view: window,
-        bubbles: true,
-        cancelable: true
-    });
-    element.dispatchEvent(event);
-}
 
 
 
