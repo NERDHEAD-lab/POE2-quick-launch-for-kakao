@@ -200,15 +200,9 @@ function startPolling(settings: AppSettings) {
     const maxAttempts = 75; // 15 seconds (200ms * 75)
 
     const interval = setInterval(() => {
-        if (!document.hasFocus()) {
-            console.log('Page lost focus, skipping click this tick.');
-            return;
-        }
+        // Removed document.hasFocus() check to ensure background execution works
 
         // 1. Modal Blocker Check (REMOVED)
-        // User requested independent execution. Game Start click should not wait for modal.
-        // Previously acted as a 3s delay if modal was present.
-
 
         attempts++;
         const startBtn = document.querySelector(SELECTORS.MAIN.BTN_GAME_START) as HTMLElement;
@@ -243,6 +237,12 @@ function startPolling(settings: AppSettings) {
 }
 
 function manageIntroModal(preferTodayClose: boolean) {
+    // Check for existing cookie first to avoid redundant operations and potential site errors
+    if (document.cookie.includes('POE2_INTRO_MODAL=1')) {
+        console.log('Intro Modal cookie already present. Skipping modal logic.');
+        return;
+    }
+
     console.log(`Managing Intro Modal. Prefer 'Today Close': ${preferTodayClose}`);
 
     if (preferTodayClose) {
@@ -302,16 +302,34 @@ function manageIntroModal(preferTodayClose: boolean) {
 function safeClick(element: HTMLElement) {
     if (!element) return;
 
+    // 1. 특수 링크 감지 (javascript:...)
+    // 'javascript:'로 시작하는 링크를 직접 click()하면 CSP(보안 정책)에 의해 차단될 수 있습니다.
+    // 따라서 마우스 이벤트를 직접 생성하여 디스패치하는 우회 방법을 사용합니다.
+    if (element instanceof HTMLAnchorElement && element.href.toLowerCase().startsWith('javascript:')) {
+        const event = new MouseEvent('click', {
+            view: window,
+            bubbles: true,
+            cancelable: true
+        });
+        event.preventDefault(); // 중요: 브라우저의 기본 이동 동작을 막고, 스크립트만 실행되도록 합니다.
+        element.dispatchEvent(event);
+        return;
+    }
+
+    // 2. 일반 요소 (Button, Div 등)
+    // 호환성이 가장 좋은 표준 .click() 메서드를 사용합니다. (Native Click)
+    if (typeof element.click === 'function') {
+        element.click();
+        return;
+    }
+
+    // 3. 최후의 수단 (Fallback)
+    // click() 함수가 없는 일부 요소(SVG 등)를 위해 강제로 마우스 이벤트를 발생시킵니다.
     const event = new MouseEvent('click', {
         view: window,
         bubbles: true,
         cancelable: true
     });
-
-    if (element instanceof HTMLAnchorElement && element.href.toLowerCase().startsWith('javascript:')) {
-        event.preventDefault();
-    }
-
     element.dispatchEvent(event);
 }
 
