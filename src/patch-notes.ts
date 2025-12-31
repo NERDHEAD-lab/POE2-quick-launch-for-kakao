@@ -47,18 +47,19 @@ export async function fetchPatchNotes(game: 'poe1' | 'poe2', limit: number): Pro
 
             return notes;
         } catch (error) {
-            console.warn(
-                `[PatchNotes] Fetch attempt ${attempt} failed for ${game} (${url}):`,
-                error
-            );
-            if (attempt < MAX_RETRIES) {
-                await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
-            } else {
+            if (attempt >= MAX_RETRIES) {
                 console.error(
-                    `[PatchNotes] All ${MAX_RETRIES} attempts failed for ${game} (${url}).`
+                    `[PatchNotes] All ${MAX_RETRIES} attempts failed for ${game} (${url}).`,
+                    error
                 );
                 return [];
             }
+
+            console.info(
+                `[PatchNotes] Fetch attempt ${attempt} failed for ${game} (${url}). Retrying...`,
+                error
+            );
+            await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
         }
     }
     return [];
