@@ -30,6 +30,7 @@
         "dev": "vite",
         "build": "tsc && vite build",
         "zip": "npm run build && node scripts/make-zip.js",
+        "test": "vitest",
         "zip:firefox": "npm run build && node scripts/make-zip-firefox.js",
         "lint": "eslint src scripts --ext .ts,.js",
         "format": "prettier --write .",
@@ -38,6 +39,7 @@
     "devDependencies": {
         "@crxjs/vite-plugin": "^2.0.0-beta.28",
         "@types/chrome": "^0.1.32",
+        "@types/jsdom": "^27.0.0",
         "@typescript-eslint/eslint-plugin": "^8.51.0",
         "@typescript-eslint/parser": "^8.51.0",
         "bestzip": "^2.2.1",
@@ -45,11 +47,13 @@
         "eslint-config-prettier": "^10.1.8",
         "eslint-plugin-import": "^2.32.0",
         "husky": "^9.1.7",
+        "jsdom": "^27.4.0",
         "lint-staged": "^16.2.7",
         "prettier": "^3.7.4",
         "typescript": "^5.2.2",
         "typescript-eslint": "^8.51.0",
-        "vite": "^5.0.0"
+        "vite": "^5.0.0",
+        "vitest": "^4.0.16"
     },
     "lint-staged": {
         "*.{ts,js,tsx,jsx}": [
