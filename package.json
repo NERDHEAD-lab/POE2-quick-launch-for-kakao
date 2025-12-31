@@ -32,7 +32,8 @@
         "zip": "npm run build && node scripts/make-zip.js",
         "zip:firefox": "npm run build && node scripts/make-zip-firefox.js",
         "lint": "eslint src scripts --ext .ts,.js",
-        "format": "prettier --write ."
+        "format": "prettier --write .",
+        "prepare": "husky"
     },
     "devDependencies": {
         "@crxjs/vite-plugin": "^2.0.0-beta.28",
@@ -43,8 +44,19 @@
         "eslint": "^9.39.2",
         "eslint-config-prettier": "^10.1.8",
         "eslint-plugin-import": "^2.32.0",
+        "husky": "^9.1.7",
+        "lint-staged": "^16.2.7",
         "prettier": "^3.7.4",
         "typescript": "^5.2.2",
         "vite": "^5.0.0"
+    },
+    "lint-staged": {
+        "*.{ts,js,tsx,jsx}": [
+            "prettier --write",
+            "eslint --fix"
+        ],
+        "*.{json,css,md}": [
+            "prettier --write"
+        ]
     }
 }
