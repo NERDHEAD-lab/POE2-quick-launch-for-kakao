@@ -5,9 +5,9 @@
 
 export const SELECTORS = {
     // -------------------------------------------------------------------------
-    // 1. Main Page (/main)
+    // 1. POE2 Main Page (/main)
     // -------------------------------------------------------------------------
-    MAIN: {
+    POE2: {
         // The container holding the intro modal content
         // Used to block Game Start until dismissed
         MODAL_CONTAINER: '.modal__container',

@@ -31,6 +31,7 @@ export interface AppSettings {
     cachedNotices: Notice[];
     cachedThemeColors: Record<string, ThemeColors>;
     selectedGame: GameType;
+    isTutorialMode: boolean;
 }
 
 export const STORAGE_KEYS = {
@@ -41,7 +42,8 @@ export const STORAGE_KEYS = {
     PATCH_NOTE_COUNT: 'patchNoteCount',
     CACHED_PATCH_NOTES: 'cachedPatchNotes',
     CACHED_NOTICES: 'cachedNotices',
-    CACHED_THEME_COLORS: 'cachedThemeColors'
+    CACHED_THEME_COLORS: 'cachedThemeColors',
+    IS_TUTORIAL_MODE: 'isTutorialMode'
 } as const;
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -52,7 +54,8 @@ export const DEFAULT_SETTINGS: AppSettings = {
     cachedPatchNotes: { poe: [], poe2: [] },
     cachedNotices: [],
     cachedThemeColors: {},
-    selectedGame: 'poe2'
+    selectedGame: 'poe2',
+    isTutorialMode: false
 };
 
 /**
@@ -82,7 +85,10 @@ export async function loadSettings(): Promise<AppSettings> {
                     DEFAULT_SETTINGS.cachedThemeColors,
                 selectedGame:
                     (result[STORAGE_KEYS.SELECTED_GAME] as GameType) ??
-                    DEFAULT_SETTINGS.selectedGame
+                    DEFAULT_SETTINGS.selectedGame,
+                isTutorialMode:
+                    (result[STORAGE_KEYS.IS_TUTORIAL_MODE] as boolean) ??
+                    DEFAULT_SETTINGS.isTutorialMode
             };
             resolve(settings);
         });

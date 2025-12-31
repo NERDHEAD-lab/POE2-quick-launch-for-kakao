@@ -10,6 +10,35 @@ if (chrome.storage.session && chrome.storage.session.setAccessLevel) {
     }
 }
 
+// -----------------------------------------------------------------------------
+// Install / Update Handler
+// -----------------------------------------------------------------------------
+chrome.runtime.onInstalled.addListener((details) => {
+    if (details.reason === 'install') {
+        chrome.storage.local.get(['isTutorialMode'], (result) => {
+            if (result.isTutorialMode === undefined) {
+                console.log(
+                    '[Background] Fresh install (No Settings). Setting Tutorial Mode = ON.'
+                );
+                chrome.storage.local.set({ isTutorialMode: true });
+            } else {
+                console.log(
+                    '[Background] Install detected but settings exist. Preserving existing Tutorial Mode.'
+                );
+            }
+        });
+    } else if (details.reason === 'update') {
+        chrome.storage.local.get(['isTutorialMode'], (result) => {
+            if (result.isTutorialMode === undefined) {
+                console.log(
+                    '[Background] Update detected. Initializing Tutorial Mode to OFF for existing user.'
+                );
+                chrome.storage.local.set({ isTutorialMode: false });
+            }
+        });
+    }
+});
+
 interface MessageRequest {
     action: string;
     shouldCloseMainPage?: boolean;
@@ -55,9 +84,6 @@ chrome.runtime.onMessage.addListener((request: MessageRequest, sender, sendRespo
                 });
             }, 1000);
         });
-    } else if (request.action === 'launcherGameStartClicked') {
-        /* No-op: Logic removed but action kept for compatibility/logging */
-        console.log(`[Background] Deprecated 'launcherGameStartClicked' received.`);
     } else if (request.action === 'checkAutoSequence') {
         chrome.storage.session.get(['isAutoSequence'], (result) => {
             sendResponse({ isAutoSequence: result['isAutoSequence'] });

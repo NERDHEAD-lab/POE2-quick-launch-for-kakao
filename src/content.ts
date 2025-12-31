@@ -1,5 +1,5 @@
 import { SELECTORS } from './domSelectors';
-import { loadSettings, AppSettings } from './storage';
+import { loadSettings, AppSettings, STORAGE_KEYS } from './storage';
 import { safeClick, observeAndInteract } from './utils/dom';
 
 console.log('POE / POE2 Quick Launch Content Script Loaded');
@@ -41,7 +41,7 @@ const PoeMainHandler: PageHandler = {
         console.log(`[Handler Execute] ${PoeMainHandler.description}`);
         if (window.location.hash.includes('#autoStart')) {
             console.log('Auto Start triggered on POE.');
-            handlePoeAutoStart(settings);
+            startMainPagePolling(settings, SELECTORS.POE.BTN_GAME_START);
         }
     }
 };
@@ -66,7 +66,7 @@ const Poe2MainHandler: PageHandler = {
             chrome.runtime.sendMessage({ action: 'registerMainTab' });
 
             chrome.runtime.sendMessage({ action: 'setAutoSequence', value: true });
-            startPolling(settings);
+            startMainPagePolling(settings, SELECTORS.POE2.BTN_GAME_START);
         }
     }
 };
@@ -162,6 +162,10 @@ const SecurityCenterHandler: PageHandler = {
     }
 };
 
+// ... (Existing Imports)
+
+// ... (Existing Handlers 1-7)
+
 const LauncherCompletionHandler: PageHandler = {
     name: 'LauncherCompletionHandler',
     description: 'Launcher Execution Confirmation Page',
@@ -170,13 +174,17 @@ const LauncherCompletionHandler: PageHandler = {
         if (!url.pathname.includes('/securitycenter') || !url.pathname.includes('/completed.html'))
             return false;
 
-        // Verify gameCode is 'poe' or 'poe2'
         const gameCode = url.searchParams.get('gameCode');
         return gameCode === 'poe' || gameCode === 'poe2';
     },
     allowedReferrers: ['security-center.game.daum.net'],
     execute: (settings) => {
         console.log(`[Handler Execute] ${LauncherCompletionHandler.description}`);
+
+        // 1. Process Completion (Signal Close Tab, Update Tutorial Mode) - execute FIRST
+        handleCompletionPage(settings);
+
+        // 2. Click 'Game Start' if present (Might close window, so do this last)
         performLauncherPageLogic(settings);
     }
 };
@@ -215,21 +223,18 @@ function dispatchPageLogic(settings: AppSettings) {
         // Referrer Validation
         if (handler.allowedReferrers) {
             const currentReferrer = document.referrer;
-            // Allow empty matching if list exists but is empty (should not happen based on plan)
-            // If list exists, referrer must match one of them
             const isValid = handler.allowedReferrers.some((ref) => currentReferrer.includes(ref));
 
             if (!isValid) {
                 console.warn(
                     `[Handler Skip] ${handler.name} - Invalid Referrer: "${currentReferrer}"`
                 );
-                console.warn(`Allowed: ${JSON.stringify(handler.allowedReferrers)}`);
-                return; // Stop processing since page matched but safety check failed
+                return;
             }
         }
 
         handler.execute(settings);
-        return; // Execute only the first matching handler
+        return;
     }
 
     console.log('No matching handler found for this page.');
@@ -239,37 +244,127 @@ function dispatchPageLogic(settings: AppSettings) {
 // Helper Logic
 // -----------------------------------------------------------------------------
 
-function handlePoeAutoStart(settings: AppSettings) {
-    const pollForButton = setInterval(() => {
-        const startBtn = document.querySelector(SELECTORS.POE.BTN_GAME_START) as HTMLElement;
+// Unified Main Page Polling Logic
+function startMainPagePolling(_settings: AppSettings, buttonSelector: string) {
+    let attempts = 0;
+    const maxAttempts = 50; // 10 seconds (50 * 200ms)
+
+    const interval = setInterval(() => {
+        attempts++;
+        const startBtn = document.querySelector(buttonSelector) as HTMLElement;
+
         if (startBtn) {
-            // Unconditional Cleanup for POE1 as well (requested generally)
-            // Perform BEFORE click to ensure visual update
+            // Unconditional Cleanup - BEFORE click
+            console.log('[Content] Removing #autoStart from URL (Pre-click)...');
             history.replaceState(null, '', window.location.pathname + window.location.search);
 
-            console.log('Found POE Start Button, clicking...');
+            console.log(
+                `[Attempt ${attempts}] Found Start Button (${buttonSelector}), clicking...`
+            );
             safeClick(startBtn);
-            clearInterval(pollForButton);
+
+            console.log('Start Button clicked. Stopping polling immediately.');
+            clearInterval(interval);
 
             // Register this tab as Main Tab
             chrome.runtime.sendMessage({ action: 'registerMainTab' });
 
-            chrome.runtime.sendMessage(
-                {
-                    action: 'launcherGameStartClicked',
-                    shouldCloseMainPage: settings.closeTab
-                },
-                () => {
-                    if (chrome.runtime.lastError) {
-                        /* ignore */
-                    }
-                }
-            );
-        }
-    }, 500);
+            console.log('Main Page Game Start clicked.');
+            console.log('Game Start Clicked. Waiting for Launcher Completion to close tab.');
 
-    setTimeout(() => clearInterval(pollForButton), 10000);
+            return;
+        }
+
+        if (attempts >= maxAttempts) {
+            clearInterval(interval);
+            console.log(`Stopped polling for Start Button (${buttonSelector}). Not found.`);
+        }
+    }, 200);
 }
+
+function handleCompletionPage(settings: AppSettings) {
+    console.log('*** Game Launch Completed! ***');
+
+    // Tutorial Completion Logic
+    if (settings.isTutorialMode) {
+        console.log('Tutorial Mode: OFF. Future runs will auto-close.');
+        chrome.storage.local.set({ [STORAGE_KEYS.IS_TUTORIAL_MODE]: false });
+        // NOTE: In Tutorial Mode, we do NOT close the tab even on completion,
+        // so the user can clearly see "Run Completed" and check their browser settings if needed.
+        // OR should we close it? User requirement was "Don't close to allow popup permission".
+        // Once completed, popup permission IS granted (presumably).
+        // But for safety/feedback, let's keep it open this one time.
+    } else if (settings.closeTab) {
+        // [Safety Check]
+        // Structurally, 'closeTab' should be false if 'isTutorialMode' is true (enforced by UI in popup.ts).
+        // However, we double-check here to prevent any edge cases where storage might be inconsistent.
+        console.log('Closing Main Tab (as per settings)...');
+        chrome.runtime.sendMessage({ action: 'closeMainTab' });
+    }
+}
+
+function performLauncherPageLogic(settings: AppSettings) {
+    observeAndInteract((obs) => {
+        const query = SELECTORS.LAUNCHER.GAME_START_BUTTONS.join(', ');
+        const buttons = Array.from(document.querySelectorAll(query + ', .popup__link--confirm'));
+
+        // 1. Check for Login Required Popup
+        if (
+            SELECTORS.LAUNCHER.LOGIN_REQUIRED_TEXTS.some((text) =>
+                document.body.innerText.includes(text)
+            )
+        ) {
+            // ... (Existing Login Popup Logic)
+            const confirmBtn = buttons.find(
+                (el) =>
+                    el.classList.contains(SELECTORS.LAUNCHER.BTN_CONFIRM.substring(1)) ||
+                    (el as HTMLElement).innerText?.trim() === '확인'
+            );
+
+            if (confirmBtn) {
+                console.log('Found "Confirm" button for Login Popup. Clicking...');
+                safeClick(confirmBtn as HTMLElement);
+                if (obs) obs.disconnect();
+                return true;
+            }
+            return false;
+        }
+
+        // 2. Check for "Game Start" Button
+        const gameStartBtn = buttons.find((el) => {
+            if (el.id === 'gameStart' || el.classList.contains('btn-start-game')) return true;
+            const text = (el as HTMLElement).innerText?.trim();
+            return text === '게임시작' || text === 'GAME START';
+        });
+
+        if (gameStartBtn) {
+            console.log('Launcher Game Start found. Clicking...');
+            safeClick(gameStartBtn as HTMLElement);
+
+            // Note: We NO LONGER close the tab here. We wait for Completion.
+            console.log('Launcher Button Clicked. Logic continues...');
+
+            // Fallback Logic (Only if it was an auto-start attempt)
+            if (window.location.hash.includes('#autoStart') || settings.isTutorialMode) {
+                setTimeout(() => {
+                    console.log('Fallback Timer Triggered: User still on page?');
+                    showTutorialToast(
+                        '⚠️ 게임이 실행되지 않았나요? 상단 주소창의 <b>"팝업 차단"</b>을 확인해주세요!'
+                    );
+                }, 15000);
+            }
+
+            if (obs) obs.disconnect();
+            return true;
+        }
+        return false;
+    });
+}
+// ... (startPolling) -> Need to update startPolling separately as it's further down?
+// Wait, replace_file_content replaces a chunk. I need to be careful about matching.
+// I will perform targeted replacements instead of one giant chunk to be safer.
+
+// ... (Existing Helpers continued)
 
 function performSecurityPageLogic() {
     observeAndInteract((obs) => {
@@ -306,129 +401,38 @@ function performSecurityPageLogic() {
     });
 }
 
-function performLauncherPageLogic(settings: AppSettings) {
-    observeAndInteract((obs) => {
-        const query = SELECTORS.LAUNCHER.GAME_START_BUTTONS.join(', ');
-        const buttons = Array.from(document.querySelectorAll(query + ', .popup__link--confirm'));
+// ... (Existing Helpers continued)
 
-        // 1. Check for Login Required Popup
-        if (
-            SELECTORS.LAUNCHER.LOGIN_REQUIRED_TEXTS.some((text) =>
-                document.body.innerText.includes(text)
-            )
-        ) {
-            console.log('Login required popup detected.');
-            const confirmBtn = buttons.find(
-                (el) =>
-                    el.classList.contains(SELECTORS.LAUNCHER.BTN_CONFIRM.substring(1)) ||
-                    (el as HTMLElement).innerText?.trim() === '확인'
-            );
+function showTutorialToast(message: string) {
+    const toast = document.createElement('div');
+    toast.style.cssText = `
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #333;
+        color: #fff;
+        padding: 12px 24px;
+        border-radius: 8px;
+        z-index: 99999;
+        font-size: 14px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        animation: slideDown 0.3s ease-out;
+    `;
+    toast.innerHTML = message;
+    document.body.appendChild(toast);
 
-            if (confirmBtn) {
-                console.log('Found "Confirm" button for Login Popup. Clicking...');
-                safeClick(confirmBtn as HTMLElement);
-                if (obs) obs.disconnect();
-                return true;
-            }
-            return false;
-        }
-
-        // 2. Check for "Game Start" Button
-        const gameStartBtn = buttons.find((el) => {
-            if (el.id === 'gameStart' || el.classList.contains('btn-start-game')) return true;
-            const text = (el as HTMLElement).innerText?.trim();
-            return text === '게임시작' || text === 'GAME START';
-        });
-
-        if (gameStartBtn) {
-            console.log('Launcher Game Start found. Clicking...');
-            safeClick(gameStartBtn as HTMLElement);
-
-            console.log('Launcher Game Start clicked. Sending signal to Background...');
-
-            // Perform logic for Completion context (Close Main Tab)
-
-            if (window.location.pathname.includes('/completed.html')) {
-                console.log('Completion Page detected. Requesting to close Main Tab...');
-                if (settings.closeTab) {
-                    chrome.runtime.sendMessage({ action: 'closeMainTab' });
-                }
-            }
-
-            chrome.runtime.sendMessage(
-                {
-                    action: 'launcherGameStartClicked',
-                    shouldCloseMainPage: settings.closeTab
-                },
-                () => {
-                    const err = chrome.runtime.lastError;
-                    if (err) {
-                        console.log(
-                            'Signal sent. (Response lost due to tab close - Expected behavior)'
-                        );
-                    } else {
-                        console.log('Signal sent successfully.');
-                    }
-                }
-            );
-            if (obs) obs.disconnect();
-            return true;
-        }
-        return false;
-    });
+    // Auto remove after 10s
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 500);
+    }, 10000);
 }
 
-function startPolling(settings: AppSettings) {
-    let attempts = 0;
-    const maxAttempts = 75; // 15 seconds
-
-    const interval = setInterval(() => {
-        attempts++;
-        const startBtn = document.querySelector(SELECTORS.MAIN.BTN_GAME_START) as HTMLElement;
-
-        if (startBtn) {
-            // Unconditional Local Cleanup - BEFORE click
-            console.log('[Content] Removing #autoStart from URL (Pre-click)...');
-            history.replaceState(null, '', window.location.pathname + window.location.search);
-            try {
-                if (window.location.hash.includes('autoStart')) {
-                    window.location.hash = '';
-                }
-            } catch (e) {
-                /* ignore */
-            }
-
-            console.log(`[Attempt ${attempts}] Found Start Button, clicking...`);
-            safeClick(startBtn);
-
-            console.log('Start Button clicked. Stopping polling immediately.');
-            clearInterval(interval);
-
-            console.log('Sending game start signal from Main Page...');
-            chrome.runtime.sendMessage(
-                {
-                    action: 'launcherGameStartClicked',
-                    shouldCloseMainPage: settings.closeTab
-                },
-                () => {
-                    const err = chrome.runtime.lastError;
-                    if (err) console.log('Main Page Signal sent (safely ignored error).');
-                    else console.log('Main Page Signal sent successfully.');
-                }
-            );
-
-            return;
-        } else {
-            if (attempts % 5 === 0)
-                console.log(`[Attempt ${attempts}] Start Button not found yet.`);
-        }
-
-        if (attempts >= maxAttempts) {
-            clearInterval(interval);
-            console.log('Stopped polling for Start Button.');
-        }
-    }, 200);
-}
+// ... (Existing Helpers continued)
 
 function manageIntroModal(preferTodayClose: boolean) {
     if (document.cookie.includes('POE2_INTRO_MODAL=1')) {
@@ -450,16 +454,16 @@ function manageIntroModal(preferTodayClose: boolean) {
     }
 
     const dismissAttempt = () => {
-        const introContent = document.getElementById(SELECTORS.MAIN.INTRO_MODAL_ID);
+        const introContent = document.getElementById(SELECTORS.POE2.INTRO_MODAL_ID);
         if (!introContent) return false;
 
-        const container = introContent.closest(SELECTORS.MAIN.MODAL_CONTAINER);
+        const container = introContent.closest(SELECTORS.POE2.MODAL_CONTAINER);
         if (!container) return false;
 
         if ((container as HTMLElement).offsetParent === null) return false;
 
         if (preferTodayClose) {
-            const todayBtn = container.querySelector(SELECTORS.MAIN.BTN_TODAY_CLOSE);
+            const todayBtn = container.querySelector(SELECTORS.POE2.BTN_TODAY_CLOSE);
             if (todayBtn) {
                 console.log('Found "Today Close" button. Clicking...');
                 safeClick(todayBtn as HTMLElement);
@@ -467,7 +471,7 @@ function manageIntroModal(preferTodayClose: boolean) {
             }
         }
 
-        const closeBtn = container.querySelector(SELECTORS.MAIN.BTN_CLOSE_X);
+        const closeBtn = container.querySelector(SELECTORS.POE2.BTN_CLOSE_X);
         if (closeBtn) {
             console.log('Found "Close" button (X). Clicking...');
             safeClick(closeBtn as HTMLElement);

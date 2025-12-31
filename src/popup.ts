@@ -1,3 +1,8 @@
+import bgPoe from './assets/poe/bg-keepers.png';
+import bgPoe2 from './assets/poe2/bg-forest.webp';
+import { fetchNotices } from './notice';
+import { fetchPatchNotes, getPatchNoteUrl } from './patch-notes';
+import { SETTINGS_CONFIG, SettingItem } from './settings';
 import {
     loadSettings,
     saveSetting,
@@ -10,14 +15,9 @@ import {
     AppSettings,
     BrowserType
 } from './storage';
-import { SETTINGS_CONFIG, SettingItem } from './settings';
-import { fetchPatchNotes, getPatchNoteUrl } from './patch-notes';
-import { fetchNotices } from './notice';
 import { extractThemeColors, applyThemeColors } from './utils/theme';
 
 // Assets
-import bgPoe from './assets/poe/bg-keepers.png';
-import bgPoe2 from './assets/poe2/bg-forest.webp';
 
 const launchBtn = document.getElementById('launchBtn') as HTMLAnchorElement;
 const noticeContainer = document.getElementById('noticeContainer') as HTMLDivElement;
@@ -446,7 +446,17 @@ function renderSettings(settings: AppSettings) {
             input.dataset.key = item.key;
 
             // Event Listener
-            input.addEventListener('change', () => {
+            input.addEventListener('change', (e) => {
+                // Intercept 'closeTab' if in Tutorial Mode
+                if (item.key === 'closeTab' && settings.isTutorialMode && input.checked) {
+                    e.preventDefault();
+                    input.checked = false; // Revert UI
+                    showPopupToast(
+                        '✋ 최초 1회 실행 후 설정할 수 있습니다!<br>(브라우저 팝업 허용 및 DaumGameStarter 확인 필요)'
+                    );
+                    return;
+                }
+
                 const checked = input.checked;
                 saveSetting(item.key, checked);
             });
@@ -524,6 +534,39 @@ document.addEventListener('DOMContentLoaded', async () => {
     cachedThemeColors = settings.cachedThemeColors || DEFAULT_SETTINGS.cachedThemeColors;
 
     updateGameUI(settings.selectedGame);
+
+    // 3. Tutorial Banner Logic
+    if (settings.isTutorialMode) {
+        if (!noticeContainer) return;
+
+        // Prepend Banner
+        const banner = document.createElement('div');
+        banner.className = 'tutorial-banner';
+        banner.style.cssText = `
+            background-color: #ffe812;
+            color: #000;
+            padding: 8px 12px;
+            margin-bottom: 8px;
+            border-radius: 4px;
+            font-size: 13px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            text-align: center;
+            line-height: 1.4;
+            animation: fadeIn 0.3s ease-in-out;
+        `;
+        banner.innerHTML =
+            '<span>💡 첫 실행인가요? 게임 시작 후<br>브라우저 팝업을 <b>"항상 열기"</b> 체크해주세요!</span>';
+
+        // Insert at the very top of noticeContainer or before it
+        const container = document.querySelector('.container') as HTMLDivElement;
+        if (container) {
+            container.insertBefore(banner, container.firstChild);
+        }
+    }
 });
 
 // Reactive Settings Listener
@@ -558,3 +601,31 @@ chrome.storage.onChanged.addListener((changes, namespace) => {
         }
     }
 });
+
+function showPopupToast(message: string) {
+    const toast = document.createElement('div');
+    toast.style.cssText = `
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0, 0, 0, 0.9);
+        color: #fff;
+        padding: 10px 16px;
+        border-radius: 6px;
+        z-index: 10000;
+        font-size: 13px;
+        text-align: center;
+        width: 80%;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        animation: fadeIn 0.2s ease-out;
+    `;
+    toast.innerHTML = message;
+    document.body.appendChild(toast);
+
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transition = 'opacity 0.3s';
+        setTimeout(() => toast.remove(), 300);
+    }, 2500);
+}
