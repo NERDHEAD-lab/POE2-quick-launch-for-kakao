@@ -2,7 +2,6 @@
 console.log('!!! Background Service Worker Initialized !!!');
 
 // Allow Content Scripts to access chrome.storage.session
-// Allow Content Scripts to access chrome.storage.session
 if (chrome.storage.session && chrome.storage.session.setAccessLevel) {
     try {
         chrome.storage.session.setAccessLevel({ accessLevel: 'TRUSTED_AND_UNTRUSTED_CONTEXTS' });
@@ -53,8 +52,8 @@ chrome.runtime.onMessage.addListener((request: MessageRequest, sender, sendRespo
             }, 1000);
         });
     } else if (request.action === 'launcherGameStartClicked') {
-        // Deprecated action kept potentially for logging or if needed, but logic removed
-        console.log(`[Background] Deprecated 'launcherGameStartClicked' received. No action taken.`);
+        /* No-op: Logic removed but action kept for compatibility/logging */
+        console.log(`[Background] Deprecated 'launcherGameStartClicked' received.`);
     } else if (request.action === 'checkAutoSequence') {
         chrome.storage.session.get(['isAutoSequence'], (result) => {
             sendResponse({ isAutoSequence: result['isAutoSequence'] });

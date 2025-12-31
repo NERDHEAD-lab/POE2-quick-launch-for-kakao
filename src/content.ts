@@ -3,10 +3,6 @@ import { loadSettings, AppSettings } from './storage';
 import { safeClick, observeAndInteract } from './utils/dom';
 
 console.log('POE / POE2 Quick Launch Content Script Loaded');
-
-
-
-// Listen for Hash Changes (Auto Start Re-trigger)
 window.addEventListener('hashchange', async () => {
     console.log('[Content] Hash changed:', window.location.hash);
     if (window.location.hash.includes('#autoStart')) {
@@ -318,11 +314,7 @@ function performLauncherPageLogic(settings: AppSettings) {
 
             console.log('Launcher Game Start clicked. Sending signal to Background...');
 
-            // If this is the completion handler context (checked via path usually, but safe to send signal here if we want completion logic)
-            // Actually, performLauncherPageLogic is shared.
-            // But the user asked for LauncherCompletionHandler to send the signal.
-            // LauncherCompletionHandler calls this function.
-            // Let's check if we are in completion context to send 'closeMainTab'
+            // Perform logic for Completion context (Close Main Tab)
 
             if (window.location.pathname.includes('/completed.html')) {
                 console.log('Completion Page detected. Requesting to close Main Tab...');
@@ -358,8 +350,8 @@ function startPolling(settings: AppSettings) {
         const startBtn = document.querySelector(SELECTORS.MAIN.BTN_GAME_START) as HTMLElement;
 
         if (startBtn) {
-            // Unconditional Local Cleanup (User Request) - BEFORE click
-            console.log('[Content] Local Cleanup: Removing #autoStart from URL (Unconditional, pre-click)...');
+            // Unconditional Local Cleanup - BEFORE click
+            console.log('[Content] Removing #autoStart from URL (Pre-click)...');
             history.replaceState(null, '', window.location.pathname + window.location.search);
             try {
                 if (window.location.hash.includes('autoStart')) {

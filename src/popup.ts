@@ -477,15 +477,7 @@ launchBtn.addEventListener('click', async (e) => {
     e.preventDefault();
     if (document.body.classList.contains('plugin-disabled')) return;
 
-    // We need to fetch current setting state. 
-    // Optimization: We could keep a local state object efficiently, 
-    // but reading from storage is safe enough or reading from DOM if needed.
-    // Let's rely on storage/loadSettings for consistency or a local variable?
-    // Using loadSettings assumes sync/fast enough for click, but it's async.
-    // Better to check the mapped input element or keep a local cache.
-    // Let's use `localSettings` cache if we had one, or just `chrome.storage` direct read?
-    // Actually, we can check the checkbox state directly from DOM if we want to be synchronous.
-    // But since event loop... let's just re-load settings or keep a global settings object.
+    // Check the checkbox state directly from DOM for synchronous access
 
     // Simplest: Check the checkbox in DOM since it reflects current state
     const closePopupCheckbox = document.querySelector(`input[data-key="closePopup"]`) as HTMLInputElement;
