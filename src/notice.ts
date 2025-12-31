@@ -1,4 +1,3 @@
-
 import { Notice } from './storage';
 
 const NOTICE_URL = 'https://nerdhead-lab.github.io/POE2-quick-launch-for-kakao/notice.json';

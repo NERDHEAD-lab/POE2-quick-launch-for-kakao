@@ -1,10 +1,15 @@
-// popup.ts
-import { loadSettings, saveSetting, STORAGE_KEYS, GameType, PatchNote, DEFAULT_SETTINGS, Notice, ThemeColors, AppSettings, BrowserType } from './storage';
+import {
+    loadSettings, saveSetting, STORAGE_KEYS, DEFAULT_SETTINGS,
+    GameType, PatchNote, Notice, ThemeColors, AppSettings, BrowserType
+} from './storage';
+import { SETTINGS_CONFIG, SettingItem } from './settings';
 import { fetchPatchNotes, getPatchNoteUrl } from './patch-notes';
 import { fetchNotices } from './notice';
-import { SETTINGS_CONFIG, SettingItem } from './settings';
 import { extractThemeColors, applyThemeColors } from './utils/theme';
 
+// Assets
+import bgPoe from './assets/poe/bg-keepers.png';
+import bgPoe2 from './assets/poe2/bg-forest.webp';
 
 const launchBtn = document.getElementById('launchBtn') as HTMLAnchorElement;
 const noticeContainer = document.getElementById('noticeContainer') as HTMLDivElement;
@@ -35,8 +40,7 @@ let cachedPatchNotes: Record<GameType, PatchNote[]> = { poe: [], poe2: [] };
 let cachedNotices: Notice[] = [];
 let cachedThemeColors: Record<string, ThemeColors> = {};
 
-import bgPoe from './assets/poe/bg-keepers.png';
-import bgPoe2 from './assets/poe2/bg-forest.webp';
+
 
 // Game Configuration
 const GAME_CONFIG = {
