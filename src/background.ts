@@ -34,22 +34,23 @@ chrome.runtime.onMessage.addListener((request: MessageRequest, sender, sendRespo
     } else if (request.action === 'closeMainTab') {
         chrome.storage.session.get(['mainGameTabId'], (result) => {
             const tabId = result['mainGameTabId'] as number | undefined;
-            if (tabId) {
-                console.log('[Background] Received closeMainTab signal. Closing tab in 1s:', tabId);
-
-                setTimeout(() => {
-                    chrome.tabs.remove(tabId, () => {
-                        const err = chrome.runtime.lastError;
-                        if (err) console.warn('[Background] Failed to close tab (maybe already closed):', err);
-                        else console.log('[Background] Main Game Tab closed successfully.');
-
-                        // Cleanup session storage
-                        chrome.storage.session.remove('mainGameTabId');
-                    });
-                }, 1000);
-            } else {
+            if (!tabId) {
                 console.warn('[Background] received closeMainTab but no ID found in session.');
+                return;
             }
+
+            console.log('[Background] Received closeMainTab signal. Closing tab in 1s:', tabId);
+
+            setTimeout(() => {
+                chrome.tabs.remove(tabId, () => {
+                    const err = chrome.runtime.lastError;
+                    if (err) console.warn('[Background] Failed to close tab (maybe already closed):', err);
+                    else console.log('[Background] Main Game Tab closed successfully.');
+
+                    // Cleanup session storage
+                    chrome.storage.session.remove('mainGameTabId');
+                });
+            }, 1000);
         });
     } else if (request.action === 'launcherGameStartClicked') {
         // Deprecated action kept potentially for logging or if needed, but logic removed
