@@ -187,9 +187,26 @@
         
         statusText.innerText = '설정 완료!';
         statusText.style.color = '#3fb950';
-        statusDetail.innerText = '이제 툴에서 게임이 자동으로 시작됩니다. 창을 닫아주세요.';
+        
+        // Auto-close countdown
+        let closeSeconds = 5;
+        const updateDetail = () => {
+            statusDetail.innerText = `이제 툴에서 게임이 자동으로 시작됩니다. (${closeSeconds}초 후 자동으로 닫힙니다.)`;
+        };
+        updateDetail();
+
         document.getElementById('statusDot').className = 'dot active';
         document.getElementById('statusBoard').style.borderColor = '#238636';
+
+        const timer = setInterval(() => {
+            closeSeconds--;
+            if (closeSeconds <= 0) {
+                clearInterval(timer);
+                window.close();
+            } else {
+                updateDetail();
+            }
+        }, 1000);
     });
 
     if (!extPort) {
