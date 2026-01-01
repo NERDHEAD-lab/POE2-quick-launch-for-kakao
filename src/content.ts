@@ -3,13 +3,13 @@ import { loadSettings, AppSettings, STORAGE_KEYS } from './storage';
 import { safeClick, observeAndInteract } from './utils/dom';
 
 console.log('POE / POE2 Quick Launch Content Script Loaded');
-globalThis.addEventListener('hashchange', async () => {
-    console.log('[Content] Hash changed:', globalThis.location.hash);
-    if (globalThis.location.hash.includes('#autoStart')) {
+window.addEventListener('hashchange', async () => {
+    console.log('[Content] Hash changed:', window.location.hash);
+    if (window.location.hash.includes('#autoStart')) {
         const settings = await loadSettings();
 
         // Only POE2 Main Page re-triggering logic for now
-        const currentUrl = new URL(globalThis.location.href);
+        const currentUrl = new URL(window.location.href);
         if (Poe2MainHandler.match(currentUrl)) {
             console.log('[Content] #autoStart detected via Hash Change. Re-triggering logic.');
             Poe2MainHandler.execute(settings);
@@ -39,7 +39,7 @@ const PoeMainHandler: PageHandler = {
     match: (url) => url.hostname === 'poe.game.daum.net',
     execute: (settings) => {
         console.log(`[Handler Execute] ${PoeMainHandler.description}`);
-        if (globalThis.location.hash.includes('#autoStart')) {
+        if (window.location.hash.includes('#autoStart')) {
             console.log('Auto Start triggered on POE.');
             startMainPagePolling(settings, SELECTORS.POE.BTN_GAME_START);
         }
@@ -53,7 +53,7 @@ const Poe2MainHandler: PageHandler = {
     execute: (settings) => {
         console.log(`[Handler Execute] ${Poe2MainHandler.description}`);
         const shouldDismissToday = settings.closePopup;
-        const isAutoStart = globalThis.location.hash.includes('#autoStart');
+        const isAutoStart = window.location.hash.includes('#autoStart');
 
         if (shouldDismissToday || isAutoStart) {
             manageIntroModal(shouldDismissToday);
@@ -499,5 +499,3 @@ function manageIntroModal(preferTodayClose: boolean) {
 // Entry Point
 const settings = await loadSettings();
 dispatchPageLogic(settings);
-
-export {};

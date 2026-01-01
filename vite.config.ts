@@ -24,7 +24,7 @@ export default defineConfig(({ mode }) => {
         },
         build: {
             // Disable minification in dev mode for readable stack traces
-            minify: isDev ? false : true,
+            minify: !isDev,
             // Enable source maps in dev mode
             sourcemap: isDev ? 'inline' : false,
             target: 'es2022'
