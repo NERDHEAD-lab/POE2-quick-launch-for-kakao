@@ -2,7 +2,6 @@
 console.log('!!! Background Service Worker Initialized !!!');
 
 // Allow Content Scripts to access chrome.storage.session
-// Allow Content Scripts to access chrome.storage.session
 if (chrome.storage.session && chrome.storage.session.setAccessLevel) {
     try {
         chrome.storage.session.setAccessLevel({ accessLevel: 'TRUSTED_AND_UNTRUSTED_CONTEXTS' });
@@ -10,6 +9,35 @@ if (chrome.storage.session && chrome.storage.session.setAccessLevel) {
         console.warn('Failed to set access level for session storage:', error);
     }
 }
+
+// -----------------------------------------------------------------------------
+// Install / Update Handler
+// -----------------------------------------------------------------------------
+chrome.runtime.onInstalled.addListener((details) => {
+    if (details.reason === 'install') {
+        chrome.storage.local.get(['isTutorialMode'], (result) => {
+            if (result.isTutorialMode === undefined) {
+                console.log(
+                    '[Background] Fresh install (No Settings). Setting Tutorial Mode = ON.'
+                );
+                chrome.storage.local.set({ isTutorialMode: true });
+            } else {
+                console.log(
+                    '[Background] Install detected but settings exist. Preserving existing Tutorial Mode.'
+                );
+            }
+        });
+    } else if (details.reason === 'update') {
+        chrome.storage.local.get(['isTutorialMode'], (result) => {
+            if (result.isTutorialMode === undefined) {
+                console.log(
+                    '[Background] Update detected. Initializing Tutorial Mode to OFF for existing user.'
+                );
+                chrome.storage.local.set({ isTutorialMode: false });
+            }
+        });
+    }
+});
 
 interface MessageRequest {
     action: string;
@@ -26,57 +54,36 @@ chrome.runtime.onMessage.addListener((request: MessageRequest, sender, sendRespo
         }
     }
 
-    if (request.action === 'launcherGameStartClicked') {
-        const shouldCloseMainPage = request.shouldCloseMainPage;
-        console.log(`Background received "Game Start Clicked". Close Main Page? ${shouldCloseMainPage}`);
-        sendResponse('ok');
-
-        // 1. Wait 5 seconds (Safety for UAC / Custom Protocol)
-        // This timer runs in the Background, so it persists even if the Launcher Tab closes instantly.
-        setTimeout(() => {
-            console.log('5s Safety Timer finished. Proceeding to cleanup...');
-
-            // 2. Close the Launcher Popup (Conditional) - REMOVED
-            // User feedback: Launcher pages (gamestart, pubsvc) close automatically.
-            // We should not force close them here to avoid errors or unintended behavior.
-            if (sender.tab && sender.tab.id) {
-                console.log('Processed Game Start signal from tab:', sender.tab.id);
+    if (request.action === 'registerMainTab') {
+        if (sender.tab && sender.tab.id) {
+            chrome.storage.session.set({ mainGameTabId: sender.tab.id });
+            console.log('[Background] Registered Main Game Tab ID:', sender.tab.id);
+        }
+    } else if (request.action === 'closeMainTab') {
+        chrome.storage.session.get(['mainGameTabId'], (result) => {
+            const tabId = result['mainGameTabId'] as number | undefined;
+            if (!tabId) {
+                console.warn('[Background] received closeMainTab but no ID found in session.');
+                return;
             }
 
-            // 3. Handle Main Page (Close OR Cleanup)
+            console.log('[Background] Received closeMainTab signal. Closing tab in 1s:', tabId);
+
             setTimeout(() => {
-                chrome.tabs.query({ url: "*://*.game.daum.net/*" }, (tabs) => {
-                    const mainPageTabs = tabs.filter(t => t.url &&
-                        (t.url.includes('pathofexile2.game.daum.net') || t.url.includes('poe.game.daum.net')) &&
-                        t.url.includes('#autoStart')
-                    );
-                    const tabIds = mainPageTabs.map(t => t.id).filter((id): id is number => id !== undefined);
+                chrome.tabs.remove(tabId, () => {
+                    const err = chrome.runtime.lastError;
+                    if (err)
+                        console.warn(
+                            '[Background] Failed to close tab (maybe already closed):',
+                            err
+                        );
+                    else console.log('[Background] Main Game Tab closed successfully.');
 
-                    if (tabIds.length === 0) {
-                        console.log('[Background] No Main Page tabs found.');
-                        return;
-                    }
-
-                    if (shouldCloseMainPage) {
-                        console.log('[Background] Closing Main Page tab(s):', tabIds);
-                        chrome.tabs.remove(tabIds);
-                    } else {
-                        console.log('[Background] Auto Close disabled. Sending "cleanupUrl" signal to Main Page:', tabIds);
-                        tabIds.forEach(id => {
-                            chrome.tabs.sendMessage(id, { action: 'cleanupUrl' }, (response) => {
-                                const lastError = chrome.runtime.lastError;
-                                if (lastError) {
-                                    // Common error if tab is closed or refreshing. Lower severity to warn.
-                                    console.warn(`[Background] Cleanup signal failed for tab ${id} (likely closed/busy):`, lastError.message || lastError);
-                                } else {
-                                    console.log(`[Background] Cleanup signal delivered to tab ${id}. Response:`, response);
-                                }
-                            });
-                        });
-                    }
+                    // Cleanup session storage
+                    chrome.storage.session.remove('mainGameTabId');
                 });
             }, 1000);
-        }, 5000);
+        });
     } else if (request.action === 'checkAutoSequence') {
         chrome.storage.session.get(['isAutoSequence'], (result) => {
             sendResponse({ isAutoSequence: result['isAutoSequence'] });
@@ -85,7 +92,7 @@ chrome.runtime.onMessage.addListener((request: MessageRequest, sender, sendRespo
     } else if (request.action === 'setAutoSequence') {
         const val = request.value;
         console.log('[Background] Setting Auto Sequence flag to:', val);
-        chrome.storage.session.set({ 'isAutoSequence': val });
+        chrome.storage.session.set({ isAutoSequence: val });
         sendResponse('ok');
     }
 });

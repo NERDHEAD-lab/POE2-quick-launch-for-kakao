@@ -1,9 +1,8 @@
-
 import { exec } from 'child_process';
 import fs from 'fs';
 import path from 'path';
-
 import { createRequire } from 'module';
+
 const require = createRequire(import.meta.url);
 const packageJson = require('../package.json');
 
@@ -12,7 +11,7 @@ const packageName = packageJson.name;
 
 // 0. Cleanup existing zip files
 const dir = process.cwd();
-fs.readdirSync(dir).forEach(file => {
+fs.readdirSync(dir).forEach((file) => {
     // Clean up typical zip patterns
     if (file.startsWith(packageName) && file.endsWith('.zip')) {
         console.log(`Removing old zip: ${file}`);

@@ -1,9 +1,24 @@
-// popup.ts
-import { loadSettings, saveSetting, STORAGE_KEYS, GameType, PatchNote, DEFAULT_SETTINGS, Notice, ThemeColors, AppSettings, BrowserType } from './storage';
-import { fetchPatchNotes, getPatchNoteUrl } from './patch-notes';
+import bgPoe from './assets/poe/bg-keepers.png';
+import bgPoe2 from './assets/poe2/bg-forest.webp';
+import { EXT_URLS } from './constants';
 import { fetchNotices } from './notice';
+import { fetchPatchNotes, getPatchNoteUrl } from './patch-notes';
 import { SETTINGS_CONFIG, SettingItem } from './settings';
+import {
+    loadSettings,
+    saveSetting,
+    STORAGE_KEYS,
+    DEFAULT_SETTINGS,
+    GameType,
+    PatchNote,
+    Notice,
+    ThemeColors,
+    AppSettings,
+    BrowserType
+} from './storage';
+import { extractThemeColors, applyThemeColors } from './utils/theme';
 
+// Assets
 
 const launchBtn = document.getElementById('launchBtn') as HTMLAnchorElement;
 const noticeContainer = document.getElementById('noticeContainer') as HTMLDivElement;
@@ -34,116 +49,39 @@ let cachedPatchNotes: Record<GameType, PatchNote[]> = { poe: [], poe2: [] };
 let cachedNotices: Notice[] = [];
 let cachedThemeColors: Record<string, ThemeColors> = {};
 
-import bgPoe from './assets/poe/bg-keepers.png';
-import bgPoe2 from './assets/poe2/bg-forest.webp';
-
 // Game Configuration
 const GAME_CONFIG = {
     poe: {
         bgClass: 'bg-poe',
         bgImage: bgPoe,
-        url: 'https://poe.game.daum.net#autoStart',
-        homepageUrl: 'https://poe.game.daum.net/',
-        tradeUrl: 'https://poe.game.daum.net/trade',
+        url: EXT_URLS.POE.AUTO_START,
+        homepageUrl: EXT_URLS.POE.HOMEPAGE,
+        tradeUrl: EXT_URLS.POE.TRADE,
         fallback: {
             text: '#c8c8c8',
             accent: '#dfcf99', // Gold
-            footer: '#1a1510'   // Dark Brown/Black
+            footer: '#1a1510' // Dark Brown/Black
         }
     },
     poe2: {
         bgClass: 'bg-poe2',
         bgImage: bgPoe2,
-        url: 'https://pathofexile2.game.daum.net/main#autoStart',
-        homepageUrl: 'https://pathofexile2.game.daum.net/main',
-        tradeUrl: 'https://poe.game.daum.net/trade2',
+        url: EXT_URLS.POE2.AUTO_START,
+        homepageUrl: EXT_URLS.POE2.HOMEPAGE,
+        tradeUrl: EXT_URLS.POE2.TRADE,
         fallback: {
             text: '#b5c2b5',
             accent: '#aaddaa', // Mint
-            footer: '#0c150c'  // Dark Green
+            footer: '#0c150c' // Dark Green
         }
     }
 };
 
 // ... Color Utils (Keep reused logic, omitted for brevity if unchanged, but included here for completeness) ...
-function rgbToHsl(r: number, g: number, b: number) {
-    r /= 255; g /= 255; b /= 255;
-    const max = Math.max(r, g, b), min = Math.min(r, g, b);
-    let h = 0, s, l = (max + min) / 2;
-
-    if (max === min) {
-        h = s = 0; // achromatic
-    } else {
-        const d = max - min;
-        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-        switch (max) {
-            case r: h = (g - b) / d + (g < b ? 6 : 0); break;
-            case g: h = (b - r) / d + 2; break;
-            case b: h = (r - g) / d + 4; break;
-        }
-        h /= 6;
-    }
-    return [h * 360, s, l];
-}
-
-function hslToHex(h: number, s: number, l: number) {
-    l /= 100;
-    const a = s * Math.min(l, 1 - l) / 100;
-    const f = (n: number) => {
-        const k = (n + h / 30) % 12;
-        const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
-        return Math.round(255 * color).toString(16).padStart(2, '0');
-    };
-    return `#${f(0)}${f(8)}${f(4)}`;
-}
-
-async function extractThemeColors(imageUrl: string, fallback: { text: string, accent: string, footer: string }): Promise<{ text: string, accent: string, footer: string }> {
-    return new Promise((resolve) => {
-        const img = new Image();
-        img.src = imageUrl;
-        img.onload = () => {
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            if (!ctx) return resolve(fallback);
-
-            canvas.width = 1;
-            canvas.height = 1;
-            ctx.drawImage(img, 0, 0, 1, 1);
-            const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
-
-            let [h, s, l] = rgbToHsl(r, g, b);
-
-            const accentS = Math.max(s * 100, 50);
-            const accentL = Math.max(Math.min(l * 100 * 1.5, 80), 60);
-            const accent = hslToHex(h, accentS, accentL);
-
-            const textS = Math.min(s * 100, 20);
-            const textL = 90;
-            const text = hslToHex(h, textS, textL);
-
-            const footerS = Math.min(s * 100, 20);
-            const footerL = 8;
-            const footer = hslToHex(h, footerS, footerL);
-
-            resolve({ text, accent, footer });
-        };
-        img.onerror = () => {
-            console.warn('Failed to load bg image, using fallback:', imageUrl);
-            resolve(fallback);
-        };
-    });
-}
-
-function applyThemeColors(colors: ThemeColors) {
-    document.body.style.setProperty('--theme-text', colors.text);
-    document.body.style.setProperty('--theme-accent', colors.accent);
-    document.body.style.setProperty('--theme-footer-bg', colors.footer);
-}
 
 function updateMoreButton(game: GameType) {
     if (patchNoteMoreBtn) {
-        const apiGame = game === 'poe' ? 'poe1' : 'poe2';
-        patchNoteMoreBtn.href = getPatchNoteUrl(apiGame);
+        patchNoteMoreBtn.href = getPatchNoteUrl(game);
     }
 }
 
@@ -151,10 +89,10 @@ let currentBrowser: BrowserType = 'chrome';
 
 async function detectBrowser(): Promise<BrowserType> {
     const ua = navigator.userAgent;
-    if (ua.includes("Firefox")) return 'firefox';
-    if (ua.includes("Edg")) return 'edge';
+    if (ua.includes('Firefox')) return 'firefox';
+    if (ua.includes('Edg')) return 'edge';
     // Brave Detection (Async)
-    if ((navigator as any).brave && await (navigator as any).brave.isBrave()) {
+    if ((navigator as any).brave && (await (navigator as any).brave.isBrave())) {
         return 'brave';
     }
     return 'chrome';
@@ -164,7 +102,7 @@ function renderNotices(notices: Notice[], game: GameType) {
     if (!noticeContainer) return;
     noticeContainer.innerHTML = '';
 
-    const currentNotices = notices.filter(n => {
+    const currentNotices = notices.filter((n) => {
         // 1. Check Game Target
         const isGameMatch = n.targetGame.includes(game);
         if (!isGameMatch) return false;
@@ -174,7 +112,7 @@ function renderNotices(notices: Notice[], game: GameType) {
         return n.targetBrowser.includes(currentBrowser);
     });
 
-    currentNotices.forEach(notice => {
+    currentNotices.forEach((notice) => {
         const a = document.createElement('a');
         a.className = 'sub-link';
         a.href = notice.link;
@@ -204,7 +142,7 @@ function renderPatchNotes(notes: PatchNote[], game: GameType) {
         return;
     }
 
-    notes.forEach(note => {
+    notes.forEach((note) => {
         const li = document.createElement('li');
         const a = document.createElement('a');
         a.href = note.link;
@@ -247,12 +185,10 @@ function updatePatchNotes(game: GameType) {
     }
 
     // 2. Fetch Fresh Data (Background)
-    const apiGame = game === 'poe' ? 'poe1' : 'poe2';
-
-    fetchPatchNotes(apiGame, patchNoteCount).then(fetchedNotes => {
+    fetchPatchNotes(game, patchNoteCount).then((fetchedNotes) => {
         // 3. Diff and Merge Logic
-        const processedNotes: PatchNote[] = fetchedNotes.map(newNote => {
-            const existsInCache = initialNotes.some(cached => cached.link === newNote.link);
+        const processedNotes: PatchNote[] = fetchedNotes.map((newNote) => {
+            const existsInCache = initialNotes.some((cached) => cached.link === newNote.link);
             return {
                 ...newNote,
                 isNew: !existsInCache // Marked New if not found in previous cache
@@ -288,20 +224,22 @@ async function updateGameUI(game: GameType) {
     }
 
     // Always fetch/re-calculate in background to handle updates
-    extractThemeColors(config.bgImage, config.fallback).then(newColors => {
-        // Compare new vs cached to decide if update needed
-        // Simple JSON stringify comparison
-        if (!cached || JSON.stringify(newColors) !== JSON.stringify(cached)) {
-            applyThemeColors(newColors);
-            cachedThemeColors[config.bgImage] = newColors;
-            saveSetting(STORAGE_KEYS.CACHED_THEME_COLORS, cachedThemeColors);
-        }
-    }).catch(() => {
-        // Only apply fallback if no cache existed
-        if (!cached) {
-            applyThemeColors(config.fallback);
-        }
-    });
+    extractThemeColors(config.bgImage, config.fallback)
+        .then((newColors) => {
+            // Compare new vs cached to decide if update needed
+            // Simple JSON stringify comparison
+            if (!cached || JSON.stringify(newColors) !== JSON.stringify(cached)) {
+                applyThemeColors(newColors);
+                cachedThemeColors[config.bgImage] = newColors;
+                saveSetting(STORAGE_KEYS.CACHED_THEME_COLORS, cachedThemeColors);
+            }
+        })
+        .catch(() => {
+            // Only apply fallback if no cache existed
+            if (!cached) {
+                applyThemeColors(config.fallback);
+            }
+        });
 
     // Logos
     if (game === 'poe') {
@@ -335,7 +273,7 @@ async function updateGameUI(game: GameType) {
     renderNotices(cachedNotices, game);
 
     // 2. Fetch & Update if changed
-    fetchNotices().then(newNotices => {
+    fetchNotices().then((newNotices) => {
         // Simple equality check by stringify
         const isChanged = JSON.stringify(newNotices) !== JSON.stringify(cachedNotices);
 
@@ -350,10 +288,6 @@ async function updateGameUI(game: GameType) {
     updatePatchNotes(game);
 }
 
-
-
-
-
 function switchTab(targetTab: 'patchNotes' | 'settings' | 'help') {
     // 1. Identify current state
     const isPatchNotesActive = tabPanelPatchNotes.classList.contains('active');
@@ -361,9 +295,11 @@ function switchTab(targetTab: 'patchNotes' | 'settings' | 'help') {
     const isHelpActive = tabPanelHelp.classList.contains('active');
 
     // 2. Check if we are closing the current tab (Fold)
-    if ((targetTab === 'patchNotes' && isPatchNotesActive) ||
+    if (
+        (targetTab === 'patchNotes' && isPatchNotesActive) ||
         (targetTab === 'settings' && isSettingsActive) ||
-        (targetTab === 'help' && isHelpActive)) {
+        (targetTab === 'help' && isHelpActive)
+    ) {
         // Close everything
         tabPanelPatchNotes.classList.remove('active');
         tabPanelSettings.classList.remove('active');
@@ -432,7 +368,9 @@ function updatePluginDisabledState(isDisabled: boolean) {
         launchBtn.style.pointerEvents = 'none';
         launchBtn.removeAttribute('href');
         if (settingsContainer) {
-            const toggle = settingsContainer.querySelector(`input[data-key="pluginDisable"]`) as HTMLInputElement;
+            const toggle = settingsContainer.querySelector(
+                `input[data-key="pluginDisable"]`
+            ) as HTMLInputElement;
             if (toggle) toggle.checked = true;
         }
     } else {
@@ -440,7 +378,9 @@ function updatePluginDisabledState(isDisabled: boolean) {
         launchBtn.style.pointerEvents = 'auto';
         launchBtn.href = '#';
         if (settingsContainer) {
-            const toggle = settingsContainer.querySelector(`input[data-key="pluginDisable"]`) as HTMLInputElement;
+            const toggle = settingsContainer.querySelector(
+                `input[data-key="pluginDisable"]`
+            ) as HTMLInputElement;
             if (toggle) toggle.checked = false;
         }
     }
@@ -450,7 +390,7 @@ function renderSettings(settings: AppSettings) {
     if (!settingsContainer) return;
     settingsContainer.innerHTML = '';
 
-    SETTINGS_CONFIG.forEach(item => {
+    SETTINGS_CONFIG.forEach((item) => {
         const groupDiv = document.createElement('div');
         groupDiv.className = 'control-group';
         if (item.key === 'pluginDisable') groupDiv.id = 'pluginDisableGroup';
@@ -484,7 +424,6 @@ function renderSettings(settings: AppSettings) {
             labelContainer.appendChild(labelSpan);
             labelContainer.appendChild(tooltipWrapper);
             groupDiv.appendChild(labelContainer);
-
         } else {
             const labelSpan = document.createElement('span');
             labelSpan.className = 'label-text';
@@ -505,7 +444,17 @@ function renderSettings(settings: AppSettings) {
             input.dataset.key = item.key;
 
             // Event Listener
-            input.addEventListener('change', () => {
+            input.addEventListener('change', (e) => {
+                // Intercept 'closeTab' if in Tutorial Mode
+                if (item.key === 'closeTab' && settings.isTutorialMode && input.checked) {
+                    e.preventDefault();
+                    input.checked = false; // Revert UI
+                    showPopupToast(
+                        '✋ 최초 1회 실행 후 설정할 수 있습니다!<br>(브라우저 팝업 허용 및 DaumGameStarter 확인 필요)'
+                    );
+                    return;
+                }
+
                 const checked = input.checked;
                 saveSetting(item.key, checked);
             });
@@ -517,7 +466,6 @@ function renderSettings(settings: AppSettings) {
             labelSwitch.appendChild(input);
             labelSwitch.appendChild(slider);
             groupDiv.appendChild(labelSwitch);
-
         } else if (item.type === 'number') {
             const input = document.createElement('input');
             input.type = 'number';
@@ -549,18 +497,12 @@ launchBtn.addEventListener('click', async (e) => {
     e.preventDefault();
     if (document.body.classList.contains('plugin-disabled')) return;
 
-    // We need to fetch current setting state. 
-    // Optimization: We could keep a local state object efficiently, 
-    // but reading from storage is safe enough or reading from DOM if needed.
-    // Let's rely on storage/loadSettings for consistency or a local variable?
-    // Using loadSettings assumes sync/fast enough for click, but it's async.
-    // Better to check the mapped input element or keep a local cache.
-    // Let's use `localSettings` cache if we had one, or just `chrome.storage` direct read?
-    // Actually, we can check the checkbox state directly from DOM if we want to be synchronous.
-    // But since event loop... let's just re-load settings or keep a global settings object.
+    // Check the checkbox state directly from DOM for synchronous access
 
     // Simplest: Check the checkbox in DOM since it reflects current state
-    const closePopupCheckbox = document.querySelector(`input[data-key="closePopup"]`) as HTMLInputElement;
+    const closePopupCheckbox = document.querySelector(
+        `input[data-key="closePopup"]`
+    ) as HTMLInputElement;
     const isClosePopupFn = closePopupCheckbox ? closePopupCheckbox.checked : false;
 
     const targetUrl = launchBtn.dataset.url || GAME_CONFIG.poe2.url;
@@ -581,7 +523,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // 2. Apply initial states of special actions
 
-
     const isDisabled = settings.pluginDisable;
     updatePluginDisabledState(isDisabled);
 
@@ -591,6 +532,39 @@ document.addEventListener('DOMContentLoaded', async () => {
     cachedThemeColors = settings.cachedThemeColors || DEFAULT_SETTINGS.cachedThemeColors;
 
     updateGameUI(settings.selectedGame);
+
+    // 3. Tutorial Banner Logic
+    if (settings.isTutorialMode) {
+        if (!noticeContainer) return;
+
+        // Prepend Banner
+        const banner = document.createElement('div');
+        banner.className = 'tutorial-banner';
+        banner.style.cssText = `
+            background-color: #ffe812;
+            color: #000;
+            padding: 8px 12px;
+            margin-bottom: 8px;
+            border-radius: 4px;
+            font-size: 13px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            text-align: center;
+            line-height: 1.4;
+            animation: fadeIn 0.3s ease-in-out;
+        `;
+        banner.innerHTML =
+            '<span>💡 첫 실행인가요? 게임 시작 후<br>브라우저 팝업을 <b>"항상 열기"</b> 체크해주세요!</span>';
+
+        // Insert at the very top of noticeContainer or before it
+        const container = document.querySelector('.container') as HTMLDivElement;
+        if (container) {
+            container.insertBefore(banner, container.firstChild);
+        }
+    }
 });
 
 // Reactive Settings Listener
@@ -598,7 +572,7 @@ chrome.storage.onChanged.addListener((changes, namespace) => {
     if (namespace !== 'local') return;
 
     for (const [key, { newValue }] of Object.entries(changes)) {
-        const item = SETTINGS_CONFIG.find(i => i.key === key);
+        const item = SETTINGS_CONFIG.find((i) => i.key === key);
         if (item) {
             // 1. Trigger Action Side-Effects
             if (item.actionId) {
@@ -607,12 +581,17 @@ chrome.storage.onChanged.addListener((changes, namespace) => {
 
             // 2. Sync UI State (if changed externally)
             if (settingsContainer) {
-                const input = settingsContainer.querySelector(`input[data-key="${item.key}"]`) as HTMLInputElement;
+                const input = settingsContainer.querySelector(
+                    `input[data-key="${item.key}"]`
+                ) as HTMLInputElement;
                 if (input) {
                     // Check if value actually differs to avoid cursor jumps or loops (though 'change' event breaks loop)
                     if (item.type === 'switch' && input.checked !== !!newValue) {
                         input.checked = !!newValue;
-                    } else if (item.type === 'number' && input.value !== (newValue as any).toString()) {
+                    } else if (
+                        item.type === 'number' &&
+                        input.value !== (newValue as any).toString()
+                    ) {
                         input.value = (newValue as any).toString();
                     }
                 }
@@ -620,3 +599,31 @@ chrome.storage.onChanged.addListener((changes, namespace) => {
         }
     }
 });
+
+function showPopupToast(message: string) {
+    const toast = document.createElement('div');
+    toast.style.cssText = `
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0, 0, 0, 0.9);
+        color: #fff;
+        padding: 10px 16px;
+        border-radius: 6px;
+        z-index: 10000;
+        font-size: 13px;
+        text-align: center;
+        width: 80%;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        animation: fadeIn 0.2s ease-out;
+    `;
+    toast.innerHTML = message;
+    document.body.appendChild(toast);
+
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transition = 'opacity 0.3s';
+        setTimeout(() => toast.remove(), 300);
+    }, 2500);
+}

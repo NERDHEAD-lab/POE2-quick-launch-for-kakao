@@ -1,16 +1,13 @@
+import { EXT_URLS } from './constants';
 import { PatchNote } from './storage';
 
-export const URLS = {
-    poe1: 'https://poe.game.daum.net/forum/view-forum/patch-notes',
-    poe2: 'https://poe.game.daum.net/forum/view-forum/patch-notes2',
-};
-
-export async function fetchPatchNotes(game: 'poe1' | 'poe2', limit: number): Promise<PatchNote[]> {
+export async function fetchPatchNotes(game: 'poe' | 'poe2', limit: number): Promise<PatchNote[]> {
     const MAX_RETRIES = 3;
     const RETRY_DELAY_MS = 1000;
 
     for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-        const url = URLS[game];
+        const url =
+            game === 'poe' ? EXT_URLS.POE.PATCH_NOTES_FORUM : EXT_URLS.POE2.PATCH_NOTES_FORUM;
         try {
             const response = await fetch(url);
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
@@ -47,18 +44,24 @@ export async function fetchPatchNotes(game: 'poe1' | 'poe2', limit: number): Pro
 
             return notes;
         } catch (error) {
-            console.warn(`[PatchNotes] Fetch attempt ${attempt} failed for ${game} (${url}):`, error);
-            if (attempt < MAX_RETRIES) {
-                await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS));
-            } else {
-                console.error(`[PatchNotes] All ${MAX_RETRIES} attempts failed for ${game} (${url}).`);
+            if (attempt >= MAX_RETRIES) {
+                console.error(
+                    `[PatchNotes] All ${MAX_RETRIES} attempts failed for ${game} (${url}).`,
+                    error
+                );
                 return [];
             }
+
+            console.info(
+                `[PatchNotes] Fetch attempt ${attempt} failed for ${game} (${url}). Retrying...`,
+                error
+            );
+            await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
         }
     }
     return [];
 }
 
-export function getPatchNoteUrl(game: 'poe1' | 'poe2'): string {
-    return URLS[game];
+export function getPatchNoteUrl(game: 'poe' | 'poe2'): string {
+    return game === 'poe' ? EXT_URLS.POE.PATCH_NOTES_FORUM : EXT_URLS.POE2.PATCH_NOTES_FORUM;
 }

@@ -9,6 +9,7 @@
 <!-- prettier-ignore-end -->
 
 <!-- Badges -->
+
 [chrome-web-store-version-badge]: https://img.shields.io/chrome-web-store/v/cpghdafmhbkggpehfhcdicaoponodbje?label=Chrome%20Web%20Store&logo=chromewebstore&style=for-the-badge&color=success
 [chrome-web-store-users-badge]: https://img.shields.io/chrome-web-store/users/cpghdafmhbkggpehfhcdicaoponodbje?logo=chromewebstore&style=for-the-badge&color=success
 [github-release-badge]: https://img.shields.io/github/v/release/NERDHEAD-lab/POE2-quick-launch-for-kakao?logo=github
@@ -18,6 +19,7 @@
 [buy-me-a-coffee-badge]: https://img.shields.io/badge/Buy%20Me%20a%20Coffee-yellow?logo=buymeacoffee&logoColor=white
 
 <!-- Links -->
+
 [chrome-web-store-link]: https://chromewebstore.google.com/detail/cpghdafmhbkggpehfhcdicaoponodbje?utm_source=item-share-cb
 [github-release-link]: https://github.com/NERDHEAD-lab/POE2-quick-launch-for-kakao/releases
 [build-status-link]: https://github.com/NERDHEAD-lab/POE2-quick-launch-for-kakao/actions
@@ -25,8 +27,8 @@
 [github-sponsors-link]: https://github.com/sponsors/NERDHEAD-lab
 [buy-me-a-coffee-link]: https://coff.ee/nerdhead_lab
 
-
 # POE2 Quick Launch for Kakao
+
 ![Demo](docs/poe2_autoStart_test_preview.gif)
 
 Kakao Games의 Path of Exile (1 & 2) 웹 실행을 간소화하고 자동화하는 크롬 확장 프로그램입니다.
@@ -52,6 +54,7 @@ Kakao Games의 Path of Exile (1 & 2) 웹 실행을 간소화하고 자동화하�
 ### 설치 및 로드 방법
 
 1. **프로젝트 클론 및 의존성 설치**:
+
     ```bash
     git clone https://github.com/NERDHEAD-lab/POE2-quick-launch-for-kakao.git
     cd POE2-quick-launch-for-kakao
@@ -59,11 +62,13 @@ Kakao Games의 Path of Exile (1 & 2) 웹 실행을 간소화하고 자동화하�
     ```
 
 2. **빌드**:
+
     ```bash
     npm run build
     # 또는 변경 사항 실시간 감지 (개발 모드)
     npm run dev
     ```
+
     위 명령어를 실행하면 `dist` 폴더에 확장 프로그램 파일이 생성됩니다.
 
 3. **브라우저에 확장 프로그램 로드**:
@@ -71,6 +76,20 @@ Kakao Games의 Path of Exile (1 & 2) 웹 실행을 간소화하고 자동화하�
     - 우측 상단 **"개발자 모드"** 스위치 켜기
     - 좌측 상단 **"압축해제된 확장 프로그램을 로드합니다"** 클릭
     - 프로젝트 폴더 내의 `dist` 폴더 선택
+
+### 코드 스타일 및 컨트리뷰션 가이드
+
+이 프로젝트는 코드 품질 유지를 위해 **ESLint**, **Prettier**, **Husky**를 사용합니다.
+
+- **자동 포맷팅 (Git Hooks)**: 커밋 시(`git commit`) 자동으로 변경된 파일(Staged)에 대해 포맷팅 및 검사를 수행합니다.
+- **수동 포맷팅**:
+    ```bash
+    npm run format # 전체 파일 정리 (Prettier)
+    npm run lint   # 코드 규칙 검사 (ESLint)
+    ```
+- **VS Code 설정 (자동 적용)**:
+    - 프로젝트에 포함된 `.vscode/settings.json`을 통해 **저장 시 자동 포맷팅(Format On Save)**이 기본으로 적용됩니다.
+    - 별도의 설정 없이 파일을 저장하기만 하면 코드가 자동으로 정리됩니다.
 
 ## 지원 및 문의
 

@@ -31,6 +31,7 @@ export interface AppSettings {
     cachedNotices: Notice[];
     cachedThemeColors: Record<string, ThemeColors>;
     selectedGame: GameType;
+    isTutorialMode: boolean;
 }
 
 export const STORAGE_KEYS = {
@@ -41,7 +42,8 @@ export const STORAGE_KEYS = {
     PATCH_NOTE_COUNT: 'patchNoteCount',
     CACHED_PATCH_NOTES: 'cachedPatchNotes',
     CACHED_NOTICES: 'cachedNotices',
-    CACHED_THEME_COLORS: 'cachedThemeColors'
+    CACHED_THEME_COLORS: 'cachedThemeColors',
+    IS_TUTORIAL_MODE: 'isTutorialMode'
 } as const;
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -52,7 +54,8 @@ export const DEFAULT_SETTINGS: AppSettings = {
     cachedPatchNotes: { poe: [], poe2: [] },
     cachedNotices: [],
     cachedThemeColors: {},
-    selectedGame: 'poe2'
+    selectedGame: 'poe2',
+    isTutorialMode: false
 };
 
 /**
@@ -63,13 +66,29 @@ export async function loadSettings(): Promise<AppSettings> {
         chrome.storage.local.get(null, (result: { [key: string]: any }) => {
             const settings: AppSettings = {
                 closeTab: (result[STORAGE_KEYS.CLOSE_TAB] as boolean) ?? DEFAULT_SETTINGS.closeTab,
-                closePopup: (result[STORAGE_KEYS.CLOSE_POPUP] as boolean) ?? DEFAULT_SETTINGS.closePopup,
-                pluginDisable: (result[STORAGE_KEYS.PLUGIN_DISABLED] as boolean) ?? DEFAULT_SETTINGS.pluginDisable,
-                patchNoteCount: (result[STORAGE_KEYS.PATCH_NOTE_COUNT] as number) ?? DEFAULT_SETTINGS.patchNoteCount,
-                cachedPatchNotes: (result[STORAGE_KEYS.CACHED_PATCH_NOTES] as Record<GameType, PatchNote[]>) ?? DEFAULT_SETTINGS.cachedPatchNotes,
-                cachedNotices: (result[STORAGE_KEYS.CACHED_NOTICES] as Notice[]) ?? DEFAULT_SETTINGS.cachedNotices,
-                cachedThemeColors: (result[STORAGE_KEYS.CACHED_THEME_COLORS] as Record<string, ThemeColors>) ?? DEFAULT_SETTINGS.cachedThemeColors,
-                selectedGame: (result[STORAGE_KEYS.SELECTED_GAME] as GameType) ?? DEFAULT_SETTINGS.selectedGame
+                closePopup:
+                    (result[STORAGE_KEYS.CLOSE_POPUP] as boolean) ?? DEFAULT_SETTINGS.closePopup,
+                pluginDisable:
+                    (result[STORAGE_KEYS.PLUGIN_DISABLED] as boolean) ??
+                    DEFAULT_SETTINGS.pluginDisable,
+                patchNoteCount:
+                    (result[STORAGE_KEYS.PATCH_NOTE_COUNT] as number) ??
+                    DEFAULT_SETTINGS.patchNoteCount,
+                cachedPatchNotes:
+                    (result[STORAGE_KEYS.CACHED_PATCH_NOTES] as Record<GameType, PatchNote[]>) ??
+                    DEFAULT_SETTINGS.cachedPatchNotes,
+                cachedNotices:
+                    (result[STORAGE_KEYS.CACHED_NOTICES] as Notice[]) ??
+                    DEFAULT_SETTINGS.cachedNotices,
+                cachedThemeColors:
+                    (result[STORAGE_KEYS.CACHED_THEME_COLORS] as Record<string, ThemeColors>) ??
+                    DEFAULT_SETTINGS.cachedThemeColors,
+                selectedGame:
+                    (result[STORAGE_KEYS.SELECTED_GAME] as GameType) ??
+                    DEFAULT_SETTINGS.selectedGame,
+                isTutorialMode:
+                    (result[STORAGE_KEYS.IS_TUTORIAL_MODE] as boolean) ??
+                    DEFAULT_SETTINGS.isTutorialMode
             };
             resolve(settings);
         });
