@@ -161,9 +161,41 @@
     const countdownEl = document.getElementById('countdown');
     const installBtn = document.getElementById('installBtn');
 
+
     // [Check 1] Mandatory URL Parameter Check
     const urlParams = new URLSearchParams(window.location.search);
     const extPort = urlParams.get('ext_port');
+    const action = urlParams.get('action');
+
+    // [New] Action Handler
+    if (extPort && action === 'enable_auto_launch') {
+        const statusText = document.getElementById('statusText');
+        const statusDetail = document.getElementById('statusDetail');
+
+        statusText.innerText = '자동 시작 설정 중...';
+        statusDetail.innerText = '툴에 설정 신호를 보내는 중입니다.';
+
+        // [Modified] Wait for Content Script to handle the request and dispatch event
+        // The content script (ButlerHandler) sees ?action=enable_auto_launch and calls the local server.
+        // We just wait for the success event.
+    }
+
+    // 2. Auto Launch Enabled Handler
+    window.addEventListener('poe2-patch-butler-auto-launch-enabled', (e) => {
+        const statusText = document.getElementById('statusText');
+        const statusDetail = document.getElementById('statusDetail');
+        
+        statusText.innerText = '설정 완료!';
+        statusText.style.color = '#3fb950';
+        statusDetail.innerText = '이제 툴에서 게임이 자동으로 시작됩니다. 창을 닫아주세요.';
+        document.getElementById('statusDot').className = 'dot active';
+        document.getElementById('statusBoard').style.borderColor = '#238636';
+    });
+
+    if (!extPort) {
+        // But we might want verification too? For now, let's return to avoid conflict if user just wants to toggle.
+        // However, the original code continues to verify.
+    }
 
     if (!extPort) {
         // Error State: Invalid Access
