@@ -480,7 +480,7 @@ function renderSettings(settings: AppSettings) {
             let initialValue = settings[item.key];
             initialValue ??= DEFAULT_SETTINGS[item.key];
 
-            input.value = initialValue.toString();
+            input.value = Number(initialValue).toString();
             input.dataset.key = item.key;
 
             input.addEventListener('change', () => {
