@@ -1,17 +1,6 @@
 // Message types
 console.log('!!! Background Service Worker Initialized !!!');
 
-// Allow Content Scripts to access chrome.storage.session
-(async () => {
-    try {
-        await chrome.storage.session?.setAccessLevel?.({
-            accessLevel: 'TRUSTED_AND_UNTRUSTED_CONTEXTS'
-        });
-    } catch (error) {
-        console.warn('Failed to set access level for session storage:', error);
-    }
-})();
-
 // -----------------------------------------------------------------------------
 // Install / Update Handler
 // -----------------------------------------------------------------------------
