@@ -2,9 +2,9 @@
 [![Chrome Web Store][chrome-web-store-version-badge]][chrome-web-store-link]
 [![Chrome Web Store Users][chrome-web-store-users-badge]][chrome-web-store-link]
 
-| GitHub Release                                                 | Build Status                                             | License                                                        | Sponsors                                                          | Buy Me a Coffee                                                   |
-|----------------------------------------------------------------|----------------------------------------------------------|----------------------------------------------------------------|-------------------------------------------------------------------|-------------------------------------------------------------------|
-| [![GitHub release][github-release-badge]][github-release-link] | [![Build Status][build-status-badge]][build-status-link] | [![GitHub license][github-license-badge]][github-license-link] | [![GitHub sponsors][github-sponsors-badge]][github-sponsors-link] | [![Buy Me a Coffee][buy-me-a-coffee-badge]][buy-me-a-coffee-link] |
+| Version                                                        | Build                                                    | Quality Gate                                                    | License                                                        |
+| -------------------------------------------------------------- | -------------------------------------------------------- | --------------------------------------------------------------- | -------------------------------------------------------------- |
+| [![GitHub release][github-release-badge]][github-release-link] | [![Build Status][build-status-badge]][build-status-link] | [![Quality Gate Status][quality-gate-badge]][quality-gate-link] | [![GitHub license][github-license-badge]][github-license-link] |
 
 <!-- prettier-ignore-end -->
 
@@ -12,11 +12,10 @@
 
 [chrome-web-store-version-badge]: https://img.shields.io/chrome-web-store/v/cpghdafmhbkggpehfhcdicaoponodbje?label=Chrome%20Web%20Store&logo=chromewebstore&style=for-the-badge&color=success
 [chrome-web-store-users-badge]: https://img.shields.io/chrome-web-store/users/cpghdafmhbkggpehfhcdicaoponodbje?logo=chromewebstore&style=for-the-badge&color=success
-[github-release-badge]: https://img.shields.io/github/v/release/NERDHEAD-lab/POE2-quick-launch-for-kakao?logo=github
-[build-status-badge]: https://github.com/NERDHEAD-lab/POE2-quick-launch-for-kakao/actions/workflows/release-please.yml/badge.svg
-[github-license-badge]: https://img.shields.io/github/license/NERDHEAD-lab/POE2-quick-launch-for-kakao
-[github-sponsors-badge]: https://img.shields.io/github/sponsors/NERDHEAD-lab?logo=github&logoColor=white
-[buy-me-a-coffee-badge]: https://img.shields.io/badge/Buy%20Me%20a%20Coffee-yellow?logo=buymeacoffee&logoColor=white
+[github-release-badge]: https://img.shields.io/github/v/release/NERDHEAD-lab/POE2-quick-launch-for-kakao?logo=github&label=Version
+[build-status-badge]: https://img.shields.io/github/actions/workflow/status/NERDHEAD-lab/POE2-quick-launch-for-kakao/release-please.yml?logo=github&label=Build
+[github-license-badge]: https://img.shields.io/github/license/NERDHEAD-lab/POE2-quick-launch-for-kakao?label=License
+[quality-gate-badge]: https://img.shields.io/sonar/quality_gate/NERDHEAD-lab_POE2-quick-launch-for-kakao?server=https%3A%2F%2Fsonarcloud.io&label=Quality%20Gate&logo=sonarcloud&logoColor=white
 
 <!-- Links -->
 
@@ -24,8 +23,7 @@
 [github-release-link]: https://github.com/NERDHEAD-lab/POE2-quick-launch-for-kakao/releases
 [build-status-link]: https://github.com/NERDHEAD-lab/POE2-quick-launch-for-kakao/actions
 [github-license-link]: https://github.com/NERDHEAD-lab/POE2-quick-launch-for-kakao/blob/master/LICENSE
-[github-sponsors-link]: https://github.com/sponsors/NERDHEAD-lab
-[buy-me-a-coffee-link]: https://coff.ee/nerdhead_lab
+[quality-gate-link]: https://sonarcloud.io/summary/new_code?id=NERDHEAD-lab_POE2-quick-launch-for-kakao
 
 # POE2 Quick Launch for Kakao
 
@@ -98,6 +96,7 @@ Kakao Games의 Path of Exile (1 & 2) 웹 실행을 간소화하고 자동화하�
 ## 지원 및 문의
 
 - [자주 묻는 질문 (FAQ)](docs/FAQ.md)
+- [후원하기](https://nerdhead-lab.github.io/POE2-quick-launch-for-kakao/?docs=SUPPORT.md)
 - [버그 제보 및 개선 요청 (Github)](https://github.com/NERDHEAD-lab/POE2-quick-launch-for-kakao/issues)
 - [오픈 카카오톡](https://open.kakao.com/o/sK3FU2Fh)
 
