@@ -2,6 +2,7 @@ import js from '@eslint/js';
 import tsParser from '@typescript-eslint/parser';
 import prettier from 'eslint-config-prettier';
 import importPlugin from 'eslint-plugin-import';
+import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
 export default [
@@ -12,7 +13,10 @@ export default [
         languageOptions: {
             parser: tsParser,
             ecmaVersion: 2020,
-            sourceType: 'module'
+            sourceType: 'module',
+            globals: {
+                ...globals.browser
+            }
         },
         plugins: {
             import: importPlugin
@@ -53,8 +57,8 @@ export default [
             ecmaVersion: 2020,
             sourceType: 'module',
             globals: {
-                node: true,
-                browser: true
+                ...globals.node,
+                ...globals.browser
             }
         },
         plugins: {

@@ -3,13 +3,13 @@ import { loadSettings, AppSettings, STORAGE_KEYS } from './storage';
 import { safeClick, observeAndInteract } from './utils/dom';
 
 console.log('POE / POE2 Quick Launch Content Script Loaded');
-window.addEventListener('hashchange', async () => {
-    console.log('[Content] Hash changed:', window.location.hash);
-    if (window.location.hash.includes('#autoStart')) {
+globalThis.addEventListener('hashchange', async () => {
+    console.log('[Content] Hash changed:', globalThis.location.hash);
+    if (globalThis.location.hash.includes('#autoStart')) {
         const settings = await loadSettings();
 
         // Only POE2 Main Page re-triggering logic for now
-        const currentUrl = new URL(window.location.href);
+        const currentUrl = new URL(globalThis.location.href);
         if (Poe2MainHandler.match(currentUrl)) {
             console.log('[Content] #autoStart detected via Hash Change. Re-triggering logic.');
             Poe2MainHandler.execute(settings);
@@ -39,7 +39,7 @@ const PoeMainHandler: PageHandler = {
     match: (url) => url.hostname === 'poe.game.daum.net',
     execute: (settings) => {
         console.log(`[Handler Execute] ${PoeMainHandler.description}`);
-        if (window.location.hash.includes('#autoStart')) {
+        if (globalThis.location.hash.includes('#autoStart')) {
             console.log('Auto Start triggered on POE.');
             startMainPagePolling(settings, SELECTORS.POE.BTN_GAME_START);
         }
@@ -53,7 +53,7 @@ const Poe2MainHandler: PageHandler = {
     execute: (settings) => {
         console.log(`[Handler Execute] ${Poe2MainHandler.description}`);
         const shouldDismissToday = settings.closePopup;
-        const isAutoStart = window.location.hash.includes('#autoStart');
+        const isAutoStart = globalThis.location.hash.includes('#autoStart');
 
         if (shouldDismissToday || isAutoStart) {
             manageIntroModal(shouldDismissToday);
@@ -211,7 +211,7 @@ function dispatchPageLogic(settings: AppSettings) {
         return;
     }
 
-    const currentUrl = new URL(window.location.href);
+    const currentUrl = new URL(globalThis.location.href);
     console.log('Dispatching logic for:', currentUrl.href);
     console.log('Referrer:', document.referrer);
 
@@ -256,7 +256,11 @@ function startMainPagePolling(_settings: AppSettings, buttonSelector: string) {
         if (startBtn) {
             // Unconditional Cleanup - BEFORE click
             console.log('[Content] Removing #autoStart from URL (Pre-click)...');
-            history.replaceState(null, '', window.location.pathname + window.location.search);
+            history.replaceState(
+                null,
+                '',
+                globalThis.location.pathname + globalThis.location.search
+            );
 
             console.log(
                 `[Attempt ${attempts}] Found Start Button (${buttonSelector}), clicking...`
@@ -345,7 +349,7 @@ function performLauncherPageLogic(settings: AppSettings) {
             console.log('Launcher Button Clicked. Logic continues...');
 
             // Fallback Logic (Only if it was an auto-start attempt)
-            if (window.location.hash.includes('#autoStart') || settings.isTutorialMode) {
+            if (globalThis.location.hash.includes('#autoStart') || settings.isTutorialMode) {
                 setTimeout(() => {
                     console.log('Fallback Timer Triggered: User still on page?');
                     showTutorialToast(
