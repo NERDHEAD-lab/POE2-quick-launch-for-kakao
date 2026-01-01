@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POE & POE2 빠른 실행 - 연동 확인</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-color: #0d1117;
+            --text-color: #c9d1d9;
+            --accent-color: #58a6ff;
+            --border-color: #30363d;
+            --card-bg: #161b22;
+            --success-color: #238636;
+            --error-color: #da3633;
+            --warning-color: #d29922;
+        }
+
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            line-height: 1.6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            padding: 2rem;
+        }
+
+        /* Status Board */
+        .status-board {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+            transition: border-color 0.3s ease;
+        }
+
+        .status-title {
+            font-size: 1.1rem;
+            color: #8b949e;
+            margin-bottom: 1rem;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.8rem;
+            font-weight: 700;
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background-color: #8b949e;
+            display: inline-block;
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .dot.active {
+            background-color: #3fb950;
+            box-shadow: 0 0 12px #3fb950;
+        }
+
+        .dot.warning {
+            background-color: var(--warning-color);
+            box-shadow: 0 0 12px var(--warning-color);
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.6rem 1.2rem;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: background-color 0.2s;
+            cursor: pointer;
+            border: 1px solid transparent;
+            margin-top: 1.5rem;
+        }
+
+        .btn-primary {
+            background-color: var(--accent-color);
+            color: #ffffff;
+            border: none;
+        }
+        
+        .btn-primary:hover {
+            background-color: #4f94e6;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            margin-top: 2rem;
+            color: #484f58;
+            font-size: 0.8rem;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="status-board" id="statusBoard">
+        <span class="status-title">확장 프로그램 연동 상태</span>
+        <div class="status-indicator">
+            <span class="dot" id="statusDot"></span>
+            <span id="statusText">설치 확인 중...</span>
+            <span id="countdown" style="margin-left: 8px; color: #8b949e; font-weight: normal;">(5)</span>
+        </div>
+        <div id="statusDetail" style="font-size: 0.9rem; color: #8b949e;">잠시만 기다려주세요...</div>
+        
+        <a href="https://chromewebstore.google.com/detail/cpghdafmhbkggpehfhcdicaoponodbje?utm_source=item-share-cb" 
+           target="_blank" 
+           id="installBtn"
+           class="btn btn-primary hidden">
+           확장 프로그램 설치하기
+        </a>
+    </div>
+
+    <footer>
+        <p>POE2 KG Client Patch Butler by NERDHEAD</p>
+    </footer>
+</div>
+
+<script>
+    // --- Extension Verification Logic ---
+    const statusDot = document.getElementById('statusDot');
+    const statusText = document.getElementById('statusText');
+    const statusDetail = document.getElementById('statusDetail');
+    const statusBoard = document.getElementById('statusBoard');
+    const countdownEl = document.getElementById('countdown');
+    const installBtn = document.getElementById('installBtn');
+
+    // [Check 1] Mandatory URL Parameter Check
+    const urlParams = new URLSearchParams(window.location.search);
+    const extPort = urlParams.get('ext_port');
+
+    if (!extPort) {
+        // Error State: Invalid Access
+        statusDot.className = 'dot error';
+        statusDot.style.backgroundColor = '#da3633'; // Explicit color for error
+        statusDot.style.boxShadow = '0 0 12px #da3633';
+        
+        statusText.innerText = '비정상적인 접근';
+        statusText.style.color = '#da3633';
+        
+        statusDetail.innerHTML = 'Patch Butler 툴을 통해서만 접속할 수 있습니다.<br><span style="font-size:0.8em; color:#666;">(포트 정보가 누락되었습니다)</span>';
+        statusBoard.style.borderColor = '#da3633';
+        
+        if (countdownEl) countdownEl.style.display = 'none';
+        
+        // Stop execution
+        throw new Error("Missing 'ext_port' parameter. Access denied.");
+    }
+
+    let countdown = 5;
+    let isVerified = false;
+    let countdownInterval;
+
+    const stopCountdown = () => {
+        if (countdownInterval) clearInterval(countdownInterval);
+        if (countdownEl) countdownEl.classList.add('hidden');
+    };
+
+    // 1. Success Handler
+    window.addEventListener('poe2-patch-butler-verified', (e) => {
+        isVerified = true;
+        stopCountdown();
+
+        const { port, version, butlerVersion } = e.detail;
+        
+        statusDot.className = 'dot active';
+        statusText.innerText = '연동 성공!';
+        statusText.style.color = '#3fb950';
+        
+        statusDetail.innerHTML = `
+            Tool v${butlerVersion} (Port: ${port})<br>
+            Extension v${version}
+        `;
+        
+        statusBoard.style.borderColor = '#238636';
+        if (installBtn) installBtn.classList.add('hidden');
+        
+        // Auto-close detail after success? No, clear feedback is better.
+        // Maybe change title to indicate success
+        document.title = "연동 성공! - POE2 Patch Butler";
+    });
+
+    // 2. Countdown Logic
+    countdownInterval = setInterval(() => {
+        countdown--;
+        if (isVerified) return;
+
+        if (countdown > 0) {
+            if (countdownEl) countdownEl.innerText = `(${countdown})`;
+        } else {
+            // Timeout reached
+            stopCountdown();
+            statusDot.className = 'dot warning';
+            statusText.innerText = '설치를 확인할 수 없습니다.';
+            statusText.style.color = '#d29922';
+            
+            statusDetail.innerText = '확장 프로그램이 설치되어 있지 않거나, 활성화되지 않았습니다.';
+            statusBoard.style.borderColor = '#d29922';
+            
+            // Show Install Button
+            if (installBtn) installBtn.classList.remove('hidden');
+        }
+    }, 1000);
+
+</script>
+
+</body>
+</html>
