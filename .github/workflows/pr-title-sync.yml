@@ -1,4 +1,5 @@
 # PR 생성 시 브랜치 이름을 기반으로 제목을 자동 변환합니다. (봇 제외)
+# 단, 사용자가 이미 제목을 수용한 경우(최근 커밋 메시지와 제목이 다른 경우)는 건너뜁니다.
 name: PR Title Sync
 
 on:
@@ -14,13 +15,23 @@ jobs:
         steps:
             - name: Checkout
               uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+              with:
+                  fetch-depth: 0
 
             - name: Update PR Title
               env:
                   GH_TOKEN: ${{ github.token }}
                   BRANCH_NAME: ${{ github.event.pull_request.head.ref }}
                   PR_NUMBER: ${{ github.event.pull_request.number }}
+                  PR_TITLE: ${{ github.event.pull_request.title }}
               run: |
+                  LATEST_COMMIT_MSG=$(git log -1 --format=%s)
+
+                  if [[ "$PR_TITLE" != "$LATEST_COMMIT_MSG" ]]; then
+                    echo "PR 제목이 최근 커밋 메시지와 다릅니다(이미 수동 수정됨). 작업을 중단합니다."
+                    exit 0
+                  fi
+
                   if [[ "$BRANCH_NAME" == *"/"* ]]; then
                     PREFIX="${BRANCH_NAME%%/*}"
                     SUFFIX="${BRANCH_NAME#*/}"
