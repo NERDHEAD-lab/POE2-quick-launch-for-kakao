@@ -391,6 +391,56 @@ function enablePluginUI() {
     }
 }
 
+// ... (rest of file)
+
+// Global Tooltip Logic
+let globalTooltip: HTMLDivElement | null = null;
+let globalTooltipImg: HTMLImageElement | null = null;
+
+function createGlobalTooltip() {
+    if (globalTooltip) return;
+
+    globalTooltip = document.createElement('div');
+    globalTooltip.id = 'global-tooltip';
+
+    globalTooltipImg = document.createElement('img');
+    globalTooltip.appendChild(globalTooltipImg);
+
+    document.body.appendChild(globalTooltip);
+}
+
+function showGlobalTooltip(target: HTMLElement, imageSrc: string) {
+    if (!globalTooltip || !globalTooltipImg) createGlobalTooltip();
+    if (!globalTooltip || !globalTooltipImg) return;
+
+    globalTooltipImg.src = imageSrc;
+
+    const rect = target.getBoundingClientRect();
+    const tooltipRect = globalTooltip.getBoundingClientRect();
+
+    let left = rect.left + rect.width / 2 - tooltipRect.width / 2;
+    const bottom = window.innerHeight - rect.top + 10;
+
+    if (left < 10) left = 10;
+    if (left + tooltipRect.width > window.innerWidth - 10) {
+        left = window.innerWidth - tooltipRect.width - 10;
+    }
+
+    globalTooltip.style.left = `${left}px`;
+    globalTooltip.style.bottom = `${bottom}px`;
+    globalTooltip.style.top = 'auto';
+
+    requestAnimationFrame(() => {
+        if (globalTooltip) globalTooltip.classList.add('visible');
+    });
+}
+
+function hideGlobalTooltip() {
+    if (globalTooltip) {
+        globalTooltip.classList.remove('visible');
+    }
+}
+
 function renderSettings(settings: AppSettings) {
     if (!settingsContainer) return;
     settingsContainer.innerHTML = '';
@@ -416,15 +466,13 @@ function renderSettings(settings: AppSettings) {
             infoIcon.className = 'info-icon';
             infoIcon.textContent = 'i';
 
-            const tooltipPopup = document.createElement('div');
-            tooltipPopup.className = 'tooltip-popup';
-            const tooltipImg = document.createElement('img');
-            tooltipImg.src = item.tooltip.image;
-            tooltipImg.alt = 'Info';
+            // Event Listeners for Global Tooltip
+            const imgSrc = item.tooltip.image;
+            infoIcon.addEventListener('mouseenter', () => showGlobalTooltip(infoIcon, imgSrc));
+            infoIcon.addEventListener('mouseleave', () => hideGlobalTooltip());
 
-            tooltipPopup.appendChild(tooltipImg);
             tooltipWrapper.appendChild(infoIcon);
-            tooltipWrapper.appendChild(tooltipPopup);
+            // No nested popup anymore
 
             labelContainer.appendChild(labelSpan);
             labelContainer.appendChild(tooltipWrapper);
@@ -436,6 +484,7 @@ function renderSettings(settings: AppSettings) {
             groupDiv.appendChild(labelSpan);
         }
 
+        // ... (rest of Input Section logic remains same)
         // 2. Input Section
         if (item.type === 'switch') {
             const labelSwitch = document.createElement('label');
@@ -498,6 +547,8 @@ function renderSettings(settings: AppSettings) {
         settingsContainer.appendChild(groupDiv);
     });
 }
+
+// ... showPopupToast definition ...
 
 launchBtn.addEventListener('click', async (e) => {
     e.preventDefault();

@@ -1,3 +1,4 @@
+import modalInfoImg from './assets/modal-info.png';
 import { AppSettings } from './storage';
 
 export type SettingValue = boolean | number;
@@ -36,7 +37,7 @@ export const SETTINGS_CONFIG: SettingItem[] = [
         type: 'switch',
         key: 'closePopup',
         label: '홈페이지 이벤트 창 자동 닫기',
-        tooltip: { icon: 'i', image: 'assets/modal-info.png' }
+        tooltip: { icon: 'i', image: modalInfoImg }
     },
     {
         type: 'number',

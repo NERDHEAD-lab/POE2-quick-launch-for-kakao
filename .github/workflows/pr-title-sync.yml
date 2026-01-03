@@ -16,6 +16,7 @@ jobs:
             - name: Checkout
               uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
               with:
+                  ref: ${{ github.event.pull_request.head.ref }}
                   fetch-depth: 0
 
             - name: Update PR Title
@@ -27,8 +28,14 @@ jobs:
               run: |
                   LATEST_COMMIT_MSG=$(git log -1 --format=%s)
 
+                  echo "🔍 Debug Info:"
+                  echo "   - Current PR Title: '$PR_TITLE'"
+                  echo "   - Latest Commit Msg: '$LATEST_COMMIT_MSG'"
+
                   if [[ "$PR_TITLE" != "$LATEST_COMMIT_MSG" ]]; then
-                    echo "PR 제목이 최근 커밋 메시지와 다릅니다(이미 수동 수정됨). 작업을 중단합니다."
+                    echo "⚠️ PR Title mismatch detected."
+                    echo "The PR title has likely been manually edited or does not match the initial commit."
+                    echo "Skipping auto-rename to preserve user changes."
                     exit 0
                   fi
 
