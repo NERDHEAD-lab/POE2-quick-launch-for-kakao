@@ -62,6 +62,22 @@ const Poe2MainHandler: PageHandler = {
         if (isAutoStart) {
             console.log('Auto Start triggered on Homepage.');
 
+            // [New] Send ACK to Patch Butler Tool if 'butler' param exists
+            const urlParams = new URLSearchParams(globalThis.location.search);
+            const butlerPort = urlParams.get('butler');
+
+            if (butlerPort) {
+                console.log(`Sending ACK to Patch Butler (Port: ${butlerPort})...`);
+                // [Modified] Use Background Proxy to avoid PNA/Mixed Content issues
+                chrome.runtime.sendMessage({ action: 'proxyAck', port: butlerPort }, (response) => {
+                    if (response && response.success) {
+                        console.log('[Content] ACK sent successfully via proxy.');
+                    } else {
+                        console.error('[Content] Failed to send ACK via proxy:', response?.error);
+                    }
+                });
+            }
+
             // Register this tab as the Main Game Tab for later closing
             chrome.runtime.sendMessage({ action: 'registerMainTab' });
 
