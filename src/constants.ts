@@ -16,3 +16,8 @@ export const EXT_URLS = {
     },
     NOTICE_JSON: 'https://nerdhead-lab.github.io/POE2-quick-launch-for-kakao/notice.json'
 };
+
+export const BUTLER_PARAMS = {
+    KEY: 'butler',
+    HASH: '#autoStart'
+};
