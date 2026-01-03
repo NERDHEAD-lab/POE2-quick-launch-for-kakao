@@ -85,4 +85,39 @@ chrome.runtime.onMessage.addListener((request: MessageRequest, sender, sendRespo
         console.log('[Background] Setting Auto Sequence flag to:', val);
         chrome.storage.session.set({ isAutoSequence: val });
     }
+
+    // -----------------------------------------------------------------------------
+    // Proxy Handlers for Patch Butler Integration (PNA Bypass)
+    // -----------------------------------------------------------------------------
+    if (request.action === 'proxyVerify') {
+        // [Goal] Check if local tool is running
+        const port = (request as any).port;
+        fetch(`http://127.0.0.1:${port}/verify`)
+            .then((res) => res.json())
+            .then((data) => sendResponse({ success: true, data }))
+            .catch((err) => sendResponse({ success: false, error: err.toString() }));
+        return true; // Async response
+    }
+
+    if (request.action === 'proxyEnableAutoLaunch') {
+        const port = (request as any).port;
+        fetch(`http://127.0.0.1:${port}/enable_auto_launch`)
+            .then((res) => {
+                if (res.ok) sendResponse({ success: true });
+                else sendResponse({ success: false, error: `Status: ${res.status}` });
+            })
+            .catch((err) => sendResponse({ success: false, error: err.toString() }));
+        return true; // Async response
+    }
+
+    if (request.action === 'proxyAck') {
+        const port = (request as any).port;
+        fetch(`http://127.0.0.1:${port}/ack`)
+            .then((res) => {
+                if (res.ok) sendResponse({ success: true });
+                else sendResponse({ success: false, error: `Status: ${res.status}` });
+            })
+            .catch((err) => sendResponse({ success: false, error: err.toString() }));
+        return true; // Async response
+    }
 });

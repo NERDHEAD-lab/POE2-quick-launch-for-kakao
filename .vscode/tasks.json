@@ -1,0 +1,30 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "npm: install",
+            "type": "npm",
+            "script": "setup",
+            "presentation": {
+                "reveal": "silent",
+                "panel": "shared"
+            }
+        },
+        {
+            "label": "npm: dev",
+            "type": "npm",
+            "script": "dev",
+            "dependsOn": ["npm: install"],
+            "detail": "Start the development server",
+            "problemMatcher": [],
+            "presentation": {
+                "group": "group",
+                "panel": "dedicated",
+                "reveal": "always"
+            },
+            "runOptions": {
+                "runOn": "folderOpen"
+            }
+        }
+    ]
+}

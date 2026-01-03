@@ -24,8 +24,18 @@
         {
             "matches": ["*://*.game.daum.net/*", "*://*.daum.net/*", "*://*.kakao.com/*"],
             "js": ["src/content.ts"]
+        },
+        {
+            "matches": ["*://nerdhead-lab.github.io/*"],
+            "js": ["src/content/detector.ts"]
         }
     ],
-    "host_permissions": ["*://*.game.daum.net/*", "*://*.daum.net/*", "*://*.kakao.com/*"],
+    "host_permissions": [
+        "*://*.game.daum.net/*",
+        "*://*.daum.net/*",
+        "*://*.kakao.com/*",
+        "*://nerdhead-lab.github.io/*",
+        "http://127.0.0.1/*"
+    ],
     "permissions": ["storage", "tabs"]
 }

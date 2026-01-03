@@ -1,3 +1,4 @@
+import { BUTLER_PARAMS } from './constants';
 import { SELECTORS } from './domSelectors';
 import { loadSettings, AppSettings, STORAGE_KEYS } from './storage';
 import { safeClick, observeAndInteract } from './utils/dom';
@@ -5,13 +6,15 @@ import { safeClick, observeAndInteract } from './utils/dom';
 console.log('POE / POE2 Quick Launch Content Script Loaded');
 globalThis.addEventListener('hashchange', async () => {
     console.log('[Content] Hash changed:', globalThis.location.hash);
-    if (globalThis.location.hash.includes('#autoStart')) {
+    if (globalThis.location.hash.includes(BUTLER_PARAMS.HASH)) {
         const settings = await loadSettings();
 
         // Only POE2 Main Page re-triggering logic for now
         const currentUrl = new URL(globalThis.location.href);
         if (Poe2MainHandler.match(currentUrl)) {
-            console.log('[Content] #autoStart detected via Hash Change. Re-triggering logic.');
+            console.log(
+                `[Content] ${BUTLER_PARAMS.HASH} detected via Hash Change. Re-triggering logic.`
+            );
             Poe2MainHandler.execute(settings);
         }
     }
@@ -39,7 +42,7 @@ const PoeMainHandler: PageHandler = {
     match: (url) => url.hostname === 'poe.game.daum.net',
     execute: (settings) => {
         console.log(`[Handler Execute] ${PoeMainHandler.description}`);
-        if (globalThis.location.hash.includes('#autoStart')) {
+        if (globalThis.location.hash.includes(BUTLER_PARAMS.HASH)) {
             console.log('Auto Start triggered on POE.');
             startMainPagePolling(settings, SELECTORS.POE.BTN_GAME_START);
         }
@@ -53,7 +56,7 @@ const Poe2MainHandler: PageHandler = {
     execute: (settings) => {
         console.log(`[Handler Execute] ${Poe2MainHandler.description}`);
         const shouldDismissToday = settings.closePopup;
-        const isAutoStart = globalThis.location.hash.includes('#autoStart');
+        const isAutoStart = globalThis.location.hash.includes(BUTLER_PARAMS.HASH);
 
         if (shouldDismissToday || isAutoStart) {
             manageIntroModal(shouldDismissToday);
@@ -61,6 +64,36 @@ const Poe2MainHandler: PageHandler = {
 
         if (isAutoStart) {
             console.log('Auto Start triggered on Homepage.');
+
+            // [New] Send ACK to Patch Butler Tool if 'butler' param exists
+            const urlParams = new URLSearchParams(globalThis.location.search);
+            const butlerPort = urlParams.get(BUTLER_PARAMS.KEY);
+
+            if (butlerPort) {
+                console.log(`Sending ACK to Patch Butler (Port: ${butlerPort})...`);
+                // [Modified] Use Background Proxy to avoid PNA/Mixed Content issues
+                if (chrome.runtime?.id) {
+                    chrome.runtime.sendMessage(
+                        { action: 'proxyAck', port: butlerPort },
+                        (response) => {
+                            if (chrome.runtime.lastError) {
+                                console.warn(
+                                    '[Content] Context invalidated, skipping ACK response handler.'
+                                );
+                                return;
+                            }
+                            if (response && response.success) {
+                                console.log('[Content] ACK sent successfully via proxy.');
+                            } else {
+                                console.error(
+                                    '[Content] Failed to send ACK via proxy:',
+                                    response?.error
+                                );
+                            }
+                        }
+                    );
+                }
+            }
 
             // Register this tab as the Main Game Tab for later closing
             chrome.runtime.sendMessage({ action: 'registerMainTab' });
@@ -254,13 +287,26 @@ function startMainPagePolling(_settings: AppSettings, buttonSelector: string) {
         const startBtn = document.querySelector(buttonSelector) as HTMLElement;
 
         if (startBtn) {
-            // Unconditional Cleanup - BEFORE click
-            console.log('[Content] Removing #autoStart from URL (Pre-click)...');
-            history.replaceState(
-                null,
-                '',
-                globalThis.location.pathname + globalThis.location.search
-            );
+            // Refined Cleanup - Target only butler and #autoStart
+            const url = new URL(globalThis.location.href);
+            let urlChanged = false;
+
+            if (url.searchParams.has(BUTLER_PARAMS.KEY)) {
+                console.log(`[Content] Removing ${BUTLER_PARAMS.KEY} query param...`);
+                url.searchParams.delete(BUTLER_PARAMS.KEY);
+                urlChanged = true;
+            }
+
+            if (url.hash === BUTLER_PARAMS.HASH) {
+                console.log(`[Content] Removing ${BUTLER_PARAMS.HASH} hash...`);
+                url.hash = '';
+                urlChanged = true;
+            }
+
+            if (urlChanged) {
+                console.log('[Content] Reflecting cleaned URL to history...');
+                history.replaceState(null, '', url.pathname + url.search + url.hash);
+            }
 
             console.log(
                 `[Attempt ${attempts}] Found Start Button (${buttonSelector}), clicking...`
