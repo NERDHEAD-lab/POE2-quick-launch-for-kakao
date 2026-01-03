@@ -20,6 +20,9 @@ export default defineConfig(({ mode }) => {
             cors: true,
             headers: {
                 'Access-Control-Allow-Origin': '*'
+            },
+            watch: {
+                ignored: ['**/dist/**', '**/dist-firefox/**']
             }
         },
         build: {
