@@ -23,6 +23,11 @@
 - `npm run build`: 프로덕션 빌드 (개별 실행 불필요, `zip` 명령에 포함됨)
 - `npm run test`: Vitest를 이용한 유닛 테스트
 
+### Development Environment
+
+- **IDE Automation**: VS Code (`.vscode/tasks.json`) is configured to automatically run `npm run setup` (conditional install) and start the dev server upon opening the project folder.
+- **Cross-Platform Setup**: `npm run setup` uses a Node.js-based script to check for `node_modules` and runs `npm install` only when necessary, ensuring compatibility across Windows, macOS, and Linux.
+
 > [!TIP]
 > **개발 서버 상태 확인**:
 > AI 에이전트는 작업 시작 전 `netstat -ano | findstr :5173` 명령 등을 통해 개발 서버가 실행 중인지 확인할 수 있습니다. 만약 서버가 꺼져 있다면 사용자에게 실행을 요청하거나 직접 실행 여부를 문의하게 됩니다.
@@ -87,5 +92,14 @@ Node.js 및 TypeScript 표준 컨벤션을 따릅니다.
 - **Decision**:
     1. `npm run zip` 및 `npm run zip:firefox` 명령어가 `npm run build`를 선행하도록 스크립트를 구성하고 문서를 이를 반영함.
     2. 개발자는 별도의 `npm run build` 없이 `zip` 명령어만으로 최신 빌드본을 생성하도록 함.
+- **Status**: Accepted
+- **Date**: 2026-01-04
+
+### ADR-003: Automated Development Environment
+
+- **Context**: 개발 환경 초기 세팅(의존성 설치)과 서버 실행 번거로움을 줄이고, OS 간 호환성을 확보해야 함.
+- **Decision**:
+    1. `package.json`에 `setup` 스크립트를 추가하여 Node.js 환경에서 `node_modules` 존재 여부를 체크하고 설치를 진행하도록 함 (OS 의존적 Shell 명령어 배제).
+    2. `.vscode/tasks.json`을 통해 프로젝트 오픈 시 자동으로 `setup` 스크립트를 실행하고 개발 서버를 띄우도록 설정함.
 - **Status**: Accepted
 - **Date**: 2026-01-04

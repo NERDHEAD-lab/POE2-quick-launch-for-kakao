@@ -34,7 +34,8 @@
         "zip:firefox": "npm run build && node scripts/make-zip-firefox.js",
         "lint": "eslint src scripts --ext .ts,.js",
         "format": "prettier --write .",
-        "prepare": "husky"
+        "prepare": "husky",
+        "setup": "node -e \"if(!require('fs').existsSync('node_modules')) { require('child_process').execSync('npm install', {stdio: 'inherit'}) }\""
     },
     "devDependencies": {
         "@crxjs/vite-plugin": "^2.0.0-beta.28",
