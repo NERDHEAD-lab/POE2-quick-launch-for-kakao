@@ -34,6 +34,7 @@ interface MessageRequest {
     action: string;
     shouldCloseMainPage?: boolean;
     value?: boolean;
+    port?: number;
 }
 
 chrome.runtime.onMessage.addListener((request: MessageRequest, sender, sendResponse) => {
@@ -91,7 +92,9 @@ chrome.runtime.onMessage.addListener((request: MessageRequest, sender, sendRespo
     // -----------------------------------------------------------------------------
     if (request.action === 'proxyVerify') {
         // [Goal] Check if local tool is running
-        const port = (request as any).port;
+        const port = request.port;
+        if (!port) return;
+
         fetch(`http://127.0.0.1:${port}/verify`)
             .then((res) => res.json())
             .then((data) => sendResponse({ success: true, data }))
@@ -100,7 +103,9 @@ chrome.runtime.onMessage.addListener((request: MessageRequest, sender, sendRespo
     }
 
     if (request.action === 'proxyEnableAutoLaunch') {
-        const port = (request as any).port;
+        const port = request.port;
+        if (!port) return;
+
         fetch(`http://127.0.0.1:${port}/enable_auto_launch`)
             .then((res) => {
                 if (res.ok) sendResponse({ success: true });
@@ -111,7 +116,9 @@ chrome.runtime.onMessage.addListener((request: MessageRequest, sender, sendRespo
     }
 
     if (request.action === 'proxyAck') {
-        const port = (request as any).port;
+        const port = request.port;
+        if (!port) return;
+
         fetch(`http://127.0.0.1:${port}/ack`)
             .then((res) => {
                 if (res.ok) sendResponse({ success: true });

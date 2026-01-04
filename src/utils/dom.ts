@@ -12,6 +12,7 @@ export function safeClick(element: HTMLElement) {
             bubbles: true,
             cancelable: true
         });
+        event.preventDefault(); // CSP Bypass: Stop navigation but allow site-listeners to fire
         element.dispatchEvent(event);
         return;
     }
