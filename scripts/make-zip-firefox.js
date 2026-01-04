@@ -30,10 +30,10 @@ const firefoxDistDir = path.join(dir, 'dist-firefox');
 
 console.log(`Preparing Firefox build directory: ${firefoxDistDir}`);
 
-if (fs.existsSync(firefoxDistDir)) {
-    fs.rmSync(firefoxDistDir, { recursive: true, force: true });
+if (!fs.existsSync(firefoxDistDir)) {
+    fs.mkdirSync(firefoxDistDir, { recursive: true });
 }
-fs.cpSync(distDir, firefoxDistDir, { recursive: true });
+fs.cpSync(distDir, firefoxDistDir, { recursive: true, force: true });
 
 // 2. Patch manifest.json for Firefox
 console.log('Patching dist-firefox/manifest.json for Firefox...');
