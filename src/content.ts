@@ -206,7 +206,7 @@ const LauncherCompletionHandler: PageHandler = {
         const gameCode = url.searchParams.get('gameCode');
         return gameCode === 'poe' || gameCode === 'poe2';
     },
-    allowedReferrers: ['security-center.game.daum.net'],
+    allowedReferrers: ['security-center.game.daum.net', 'pubsvc.game.daum.net'],
     execute: (settings) => {
         console.log(`[Handler Execute] ${LauncherCompletionHandler.description}`);
 
