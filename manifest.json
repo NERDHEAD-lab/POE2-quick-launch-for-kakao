@@ -2,7 +2,7 @@
     "manifest_version": 3,
     "name": "POE & POE2 빠른 실행 (Kakao)",
     "description": "Kakao Games POE 및 POE2 홈페이지 접속 시 게임 자동 실행 및 편의 기능 제공",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "action": {
         "default_popup": "src/popup.html",
         "default_icon": {
@@ -22,12 +22,22 @@
     },
     "content_scripts": [
         {
-            "matches": ["*://*.game.daum.net/*", "*://*.daum.net/*", "*://*.kakao.com/*"],
-            "js": ["src/content.ts"]
+            "matches": [
+                "*://*.game.daum.net/*",
+                "*://*.daum.net/*",
+                "*://*.kakao.com/*"
+            ],
+            "js": [
+                "src/content.ts"
+            ]
         },
         {
-            "matches": ["*://nerdhead-lab.github.io/*"],
-            "js": ["src/content/detector.ts"]
+            "matches": [
+                "*://nerdhead-lab.github.io/*"
+            ],
+            "js": [
+                "src/content/detector.ts"
+            ]
         }
     ],
     "host_permissions": [
@@ -37,5 +47,8 @@
         "*://nerdhead-lab.github.io/*",
         "http://127.0.0.1/*"
     ],
-    "permissions": ["storage", "tabs"]
+    "permissions": [
+        "storage",
+        "tabs"
+    ]
 }

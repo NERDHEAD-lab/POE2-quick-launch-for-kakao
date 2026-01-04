@@ -1,5 +1,33 @@
 # Changelog
 
+## [1.2.0](https://github.com/NERDHEAD-lab/POE2-quick-launch-for-kakao/compare/1.1.0...1.2.0) (2026-01-04)
+
+
+### Features
+
+* 1회성 팝업 차단 / daumgameStart 실행 확인 등을 위한 방어 코드 추가 및 코드 정리 ([afa9f71](https://github.com/NERDHEAD-lab/POE2-quick-launch-for-kakao/commit/afa9f71a38ccc110f0e5d51f22fa02a005e1edb9))
+* notice UI를 메뉴에 통합 ([9781783](https://github.com/NERDHEAD-lab/POE2-quick-launch-for-kakao/commit/97817834d003a21771e3b7a526548e6313732e4c))
+* 메뉴 UI 개선 ([15cc97e](https://github.com/NERDHEAD-lab/POE2-quick-launch-for-kakao/commit/15cc97e33d250fc03a2148c60349ba5bbadbc4d2))
+* 설정값 "자동실행 후 탭 닫기"가 마지막 게임 시작 팝업을 확인 누른 후 탭을 닫도록 동작 개선 ([a88f874](https://github.com/NERDHEAD-lab/POE2-quick-launch-for-kakao/commit/a88f874e64c0895a55464cf9db3d098d3c7f6154))
+* 오류 수정 후 자동으로 게임을 시작하는 기능 추가 - 2 ([3dfa6ae](https://github.com/NERDHEAD-lab/POE2-quick-launch-for-kakao/commit/3dfa6aef0181d6b9d82852c21fbe7e64e0ca17a7))
+* 오류 수정 후 자동으로 게임을 시작하는 기능 추가 ( POE2 카카오게임즈 클라이언트 오류 해결 마법사 연동 ) ([665e81e](https://github.com/NERDHEAD-lab/POE2-quick-launch-for-kakao/commit/665e81eee8852bee63714db3f4b6ca1f04d709fe))
+* 일부 환경에서 CSP 정책에 따라 게임 시작 버튼 클릭 이벤트가 차단 될 수 있는 문제 수정 ([03f0bf4](https://github.com/NERDHEAD-lab/POE2-quick-launch-for-kakao/commit/03f0bf4bf31e47b2edf3575d039e8c27bc4bcc9e))
+* 특정 브라우저에서 만 표시되는 도움말을 위한 인터페이스 변경 ([091608c](https://github.com/NERDHEAD-lab/POE2-quick-launch-for-kakao/commit/091608c2498947611b40070df12f5d5e5e170872))
+* 파이어폭스 동작 개선 ([0d6210e](https://github.com/NERDHEAD-lab/POE2-quick-launch-for-kakao/commit/0d6210eb1fb2af6e1be1bf80c275a856125ba7dc))
+* 파이어폭스 빌드가 release에 포함되도록 수정 ([794c060](https://github.com/NERDHEAD-lab/POE2-quick-launch-for-kakao/commit/794c060838ca3df263ff334577b96ac7834ac202))
+* 파이어폭스 지원 추가 ([f1c7852](https://github.com/NERDHEAD-lab/POE2-quick-launch-for-kakao/commit/f1c7852175f2a4325305cebbcd3e50d61da34238))
+
+
+### Bug Fixes
+
+* Brave 브라우저에서 발생하던 `ReferenceError` (호이스팅 문제) 수정 (초기화 로직 위치 변경) ([3977219](https://github.com/NERDHEAD-lab/POE2-quick-launch-for-kakao/commit/3977219a067c3cf6d8de46eb9c223ce2864345b5))
+* **CI/CD:** vite dev 환경 개선 ([5c33923](https://github.com/NERDHEAD-lab/POE2-quick-launch-for-kakao/commit/5c33923e5f106d3ead88e7823846705347d0aaba))
+* **CI/CD:** vite dev 환경 정상화 ([37791b2](https://github.com/NERDHEAD-lab/POE2-quick-launch-for-kakao/commit/37791b2e87f1e8e77c5bf41c9cda29993fe6910e))
+* 간헐적으로 패치노트가 갱신 되지 않는 문제 수정 ( 최대 3회 재시도 ) ([9e92b20](https://github.com/NERDHEAD-lab/POE2-quick-launch-for-kakao/commit/9e92b205ca08eef549de849de7896ebdf4fbdb02))
+* 불필요한 세션 권한 제거 ([2bf99d8](https://github.com/NERDHEAD-lab/POE2-quick-launch-for-kakao/commit/2bf99d8343ee187e24918d78bd83e756b7d2c38a))
+* 툴팁이 정상적으로 표시되지 않는 문제 수정 ([8d7e9f4](https://github.com/NERDHEAD-lab/POE2-quick-launch-for-kakao/commit/8d7e9f49bbbb7f95c49a526ab7dbc809241802d4))
+* 홈페이지 이벤트 창이 이미 닫겨있지만 불필요하게 닫으려고 시도하는 문제 수정 ([300d40e](https://github.com/NERDHEAD-lab/POE2-quick-launch-for-kakao/commit/300d40e328d86e66d337cf0db678ca79710840ed))
+
 ## [1.1.0](https://github.com/NERDHEAD-lab/POE2-quick-launch-for-kakao/compare/1.0.1...1.1.0) (2025-12-29)
 
 ### Features
