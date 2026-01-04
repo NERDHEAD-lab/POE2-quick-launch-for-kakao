@@ -593,39 +593,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     cachedThemeColors = settings.cachedThemeColors ?? DEFAULT_SETTINGS.cachedThemeColors;
 
     updateGameUI(settings.selectedGame);
-
-    // 3. Tutorial Banner Logic
-    if (settings.isTutorialMode) {
-        if (!noticeContainer) return;
-
-        // Prepend Banner
-        const banner = document.createElement('div');
-        banner.className = 'tutorial-banner';
-        banner.style.cssText = `
-            background-color: #ffe812;
-            color: #000;
-            padding: 8px 12px;
-            margin-bottom: 8px;
-            border-radius: 4px;
-            font-size: 13px;
-            font-weight: bold;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-            text-align: center;
-            line-height: 1.4;
-            animation: fadeIn 0.3s ease-in-out;
-        `;
-        banner.innerHTML =
-            '<span>💡 첫 실행인가요? 게임 시작 후<br>브라우저 팝업을 <b>"항상 열기"</b> 체크해주세요!</span>';
-
-        // Insert at the very top of noticeContainer or before it
-        const container = document.querySelector('.container') as HTMLDivElement;
-        if (container) {
-            container.insertBefore(banner, container.firstChild);
-        }
-    }
 });
 
 // Reactive Settings Listener
@@ -681,7 +648,10 @@ function showPopupToast(message: string) {
         box-shadow: 0 4px 12px rgba(0,0,0,0.3);
         animation: fadeIn 0.2s ease-out;
     `;
-    toast.innerHTML = message;
+    message.split('<br>').forEach((line, index) => {
+        if (index > 0) toast.appendChild(document.createElement('br'));
+        toast.appendChild(document.createTextNode(line));
+    });
     document.body.appendChild(toast);
 
     setTimeout(() => {
