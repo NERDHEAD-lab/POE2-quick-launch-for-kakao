@@ -151,7 +151,16 @@ const LauncherCheckHandler: PageHandler = {
         'pubsvc.game.daum.net'
     ],
     execute: (settings) => {
+        const urlParams = new URLSearchParams(globalThis.location.search);
+        const paramsObj: Record<string, string> = {};
+        urlParams.forEach((val, key) => (paramsObj[key] = val));
+
         console.log(`[Handler Execute] ${LauncherCheckHandler.description}`);
+        remoteLog(
+            LauncherCheckHandler.name,
+            `Handler Started immediately. Params: ${JSON.stringify(paramsObj)}`
+        );
+
         performLauncherPageLogic(settings);
     }
 };
@@ -385,9 +394,16 @@ function handleCompletionPage(settings: AppSettings) {
 }
 
 function performLauncherPageLogic(settings: AppSettings) {
+    console.log('[performLauncherPageLogic] Starting observation...');
+    remoteLog('performLauncherPageLogic', 'Observation started');
+
     observeAndInteract((obs) => {
         const query = SELECTORS.LAUNCHER.GAME_START_BUTTONS.join(', ');
         const buttons = Array.from(document.querySelectorAll(query + ', .popup__link--confirm'));
+
+        console.log(
+            `[performLauncherPageLogic] Found ${buttons.length} candidate buttons via query: ${query}`
+        );
 
         // 1. Check for Login Required Popup
         if (
@@ -395,7 +411,9 @@ function performLauncherPageLogic(settings: AppSettings) {
                 document.body.innerText.includes(text)
             )
         ) {
-            // ... (Existing Login Popup Logic)
+            console.log('[performLauncherPageLogic] Login Required popup detected by text.');
+            remoteLog('performLauncherPageLogic', 'Login Required Detected');
+
             const confirmBtn = buttons.find(
                 (el) =>
                     el.classList.contains(SELECTORS.LAUNCHER.BTN_CONFIRM.substring(1)) ||
@@ -404,6 +422,7 @@ function performLauncherPageLogic(settings: AppSettings) {
 
             if (confirmBtn) {
                 console.log('Found "Confirm" button for Login Popup. Clicking...');
+                remoteLog('performLauncherPageLogic', 'Clicking Login Confirm Button');
                 safeClick(confirmBtn as HTMLElement);
                 if (obs) obs.disconnect();
                 return true;
@@ -419,11 +438,17 @@ function performLauncherPageLogic(settings: AppSettings) {
         });
 
         if (gameStartBtn) {
-            console.log('Launcher Game Start found. Clicking...');
-            safeClick(gameStartBtn as HTMLElement);
+            const btnEl = gameStartBtn as HTMLElement;
+            console.log(
+                `[performLauncherPageLogic] Game Start button found: ${btnEl.className} (id: ${btnEl.id})`
+            );
+            remoteLog('performLauncherPageLogic', `Game Start Found: ${btnEl.innerText}`);
+
+            safeClick(btnEl);
 
             // Note: We NO LONGER close the tab here. We wait for Completion.
             console.log('Launcher Button Clicked. Logic continues...');
+            remoteLog('performLauncherPageLogic', 'Button Clicked.');
 
             // Fallback Logic (Only if it was an auto-start attempt)
             if (globalThis.location.hash.includes('#autoStart') || settings.isTutorialMode) {
@@ -437,6 +462,20 @@ function performLauncherPageLogic(settings: AppSettings) {
 
             if (obs) obs.disconnect();
             return true;
+        } else {
+            // Log when buttons are found but none match our game start criteria
+            if (buttons.length > 0) {
+                const buttonInfo = buttons
+                    .map((b) => `[${(b as HTMLElement).innerText?.trim()}]`)
+                    .join(', ');
+                console.log(
+                    `[performLauncherPageLogic] Found ${buttons.length} buttons but none matched: ${buttonInfo}`
+                );
+                remoteLog(
+                    'performLauncherPageLogic',
+                    `No match found among buttons: ${buttonInfo}`
+                );
+            }
         }
         return false;
     });
