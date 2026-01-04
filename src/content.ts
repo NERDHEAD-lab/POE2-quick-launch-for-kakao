@@ -151,17 +151,36 @@ const LauncherCheckHandler: PageHandler = {
         'pubsvc.game.daum.net'
     ],
     execute: (settings) => {
-        const urlParams = new URLSearchParams(globalThis.location.search);
-        const paramsObj: Record<string, string> = {};
-        urlParams.forEach((val, key) => (paramsObj[key] = val));
-
         console.log(`[Handler Execute] ${LauncherCheckHandler.description}`);
-        remoteLog(
-            LauncherCheckHandler.name,
-            `Handler Started immediately. Params: ${JSON.stringify(paramsObj)}`
-        );
+        remoteLog(LauncherCheckHandler.name, 'Handler Started');
 
-        performLauncherPageLogic(settings);
+        // 1. txId Check (Redirect from Security Center)
+        // If txId exists, it's likely already authorized, so just close the tab.
+        if (globalThis.location.search.includes('txId=')) {
+            console.log(
+                'txId detected after redirect. Presuming authorization complete. Closing tab...'
+            );
+            remoteLog(LauncherCheckHandler.name, 'txId detected. Triggering completion.');
+            handleCompletionPage(settings);
+            return;
+        }
+
+        // 2. Safety Timer (2s)
+        // If we are still on this page after 2 seconds, assume game has started (Auto-start/Simplified mode).
+        const safetyTimer = setTimeout(() => {
+            console.log(
+                'Safety Timer triggered (2s passed). Presuming game started. Closing tab...'
+            );
+            remoteLog(LauncherCheckHandler.name, 'Safety Timer expired. Closing tab.');
+            handleCompletionPage(settings);
+        }, 2000);
+
+        // 3. Perform Logic with Success Callback
+        performLauncherPageLogic(settings, () => {
+            console.log('Launcher success recognized by callback. Clearing safety timer.');
+            clearTimeout(safetyTimer);
+            handleCompletionPage(settings);
+        });
     }
 };
 
@@ -362,6 +381,14 @@ function startMainPagePolling(_settings: AppSettings, buttonSelector: string) {
             console.log('Main Page Game Start clicked.');
             console.log('Game Start Clicked. Waiting for Launcher Completion to close tab.');
 
+            // Safety Trigger: In case the background script fails to close our tab (e.g. port disconnected)
+            if (_settings.closeTab) {
+                setTimeout(() => {
+                    console.log('[Safety] Closing Main Tab from content script after 2s delay.');
+                    chrome.runtime.sendMessage({ action: 'closeMainTab' });
+                }, 2000);
+            }
+
             return;
         }
 
@@ -385,15 +412,15 @@ function handleCompletionPage(settings: AppSettings) {
         // Once completed, popup permission IS granted (presumably).
         // But for safety/feedback, let's keep it open this one time.
     } else if (settings.closeTab) {
-        // [Safety Check]
-        // Structurally, 'closeTab' should be false if 'isTutorialMode' is true (enforced by UI in popup.ts).
-        // However, we double-check here to prevent any edge cases where storage might be inconsistent.
-        console.log('Closing Main Tab (as per settings)...');
+        console.log('Closing Main & Launcher Tabs (as per settings)...');
+        // Close the homepage
         chrome.runtime.sendMessage({ action: 'closeMainTab' });
+        // Close the launcher/completion page
+        chrome.runtime.sendMessage({ action: 'closeTab' });
     }
 }
 
-function performLauncherPageLogic(settings: AppSettings) {
+function performLauncherPageLogic(settings: AppSettings, onSuccess?: () => void) {
     console.log('[performLauncherPageLogic] Starting observation...');
     remoteLog('performLauncherPageLogic', 'Observation started');
 
@@ -445,6 +472,12 @@ function performLauncherPageLogic(settings: AppSettings) {
             remoteLog('performLauncherPageLogic', `Game Start Found: ${btnEl.innerText}`);
 
             safeClick(btnEl);
+
+            // Handle success callback (e.g., closing tab)
+            if (onSuccess) {
+                console.log('[performLauncherPageLogic] Success callback triggered.');
+                onSuccess();
+            }
 
             // Note: We NO LONGER close the tab here. We wait for Completion.
             console.log('Launcher Button Clicked. Logic continues...');

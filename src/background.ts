@@ -36,8 +36,21 @@ chrome.runtime.onMessage.addListener((request: MessageRequest, sender, sendRespo
     console.log('Background received message:', request, 'from sender:', sender);
 
     if (request.action === 'closeTab') {
-        if (sender.tab?.id) {
-            chrome.tabs.remove(sender.tab.id);
+        const tabId = sender.tab?.id;
+        if (tabId) {
+            console.log('[Background] Received closeTab signal. Closing current tab in 1s:', tabId);
+            setTimeout(() => {
+                chrome.tabs.remove(tabId, () => {
+                    if (chrome.runtime.lastError) {
+                        console.warn(
+                            '[Background] Failed to close tab (maybe already closed):',
+                            chrome.runtime.lastError
+                        );
+                    } else {
+                        console.log('[Background] Launcher tab closed successfully.');
+                    }
+                });
+            }, 1000);
         }
     }
 
