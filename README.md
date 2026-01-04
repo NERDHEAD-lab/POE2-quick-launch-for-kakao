@@ -2,6 +2,9 @@
 [![Chrome Web Store][chrome-web-store-version-badge]][chrome-web-store-link]
 [![Chrome Web Store Users][chrome-web-store-users-badge]][chrome-web-store-link]
 
+[![Firefox Add-ons][firefox-addon-version-badge]][firefox-addon-link]
+[![Firefox Add-on Users][firefox-addon-users-badge]][firefox-addon-link]
+
 | Version                                                        | Build                                                    | Quality Gate                                                    | License                                                        |
 | -------------------------------------------------------------- | -------------------------------------------------------- | --------------------------------------------------------------- | -------------------------------------------------------------- |
 | [![GitHub release][github-release-badge]][github-release-link] | [![Build Status][build-status-badge]][build-status-link] | [![Quality Gate Status][quality-gate-badge]][quality-gate-link] | [![GitHub license][github-license-badge]][github-license-link] |
@@ -12,6 +15,8 @@
 
 [chrome-web-store-version-badge]: https://img.shields.io/chrome-web-store/v/cpghdafmhbkggpehfhcdicaoponodbje?label=Chrome%20Web%20Store&logo=chromewebstore&style=for-the-badge&color=success
 [chrome-web-store-users-badge]: https://img.shields.io/chrome-web-store/users/cpghdafmhbkggpehfhcdicaoponodbje?logo=chromewebstore&style=for-the-badge&color=success
+[firefox-addon-version-badge]: https://img.shields.io/amo/v/poe-poe2-%EB%B9%A0%EB%A5%B8-%EC%8B%A4%ED%96%89-kakao?label=Firefox%20Add-ons&logo=firefox-browser&style=for-the-badge&color=orange
+[firefox-addon-users-badge]: https://img.shields.io/amo/users/poe-poe2-%EB%B9%A0%EB%A5%B8-%EC%8B%A4%ED%96%89-kakao?logo=firefox-browser&style=for-the-badge&color=orange
 [github-release-badge]: https://img.shields.io/github/v/release/NERDHEAD-lab/POE2-quick-launch-for-kakao?logo=github&label=Version
 [build-status-badge]: https://img.shields.io/github/actions/workflow/status/NERDHEAD-lab/POE2-quick-launch-for-kakao/release-please.yml?logo=github&label=Build
 [github-license-badge]: https://img.shields.io/github/license/NERDHEAD-lab/POE2-quick-launch-for-kakao?label=License
@@ -20,6 +25,7 @@
 <!-- Links -->
 
 [chrome-web-store-link]: https://chromewebstore.google.com/detail/cpghdafmhbkggpehfhcdicaoponodbje?utm_source=item-share-cb
+[firefox-addon-link]: https://addons.mozilla.org/ko/firefox/addon/poe-poe2-%EB%B9%A0%EB%A5%B8-%EC%8B%A4%ED%96%89-kakao/
 [github-release-link]: https://github.com/NERDHEAD-lab/POE2-quick-launch-for-kakao/releases
 [build-status-link]: https://github.com/NERDHEAD-lab/POE2-quick-launch-for-kakao/actions
 [github-license-link]: https://github.com/NERDHEAD-lab/POE2-quick-launch-for-kakao/blob/master/LICENSE
