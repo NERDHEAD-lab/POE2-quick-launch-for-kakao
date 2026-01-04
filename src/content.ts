@@ -384,9 +384,9 @@ function startMainPagePolling(_settings: AppSettings, buttonSelector: string) {
             // Safety Trigger: In case the background script fails to close our tab (e.g. port disconnected)
             if (_settings.closeTab) {
                 setTimeout(() => {
-                    console.log('[Safety] Closing Main Tab from content script after 2s delay.');
+                    console.log('[Safety] Closing Main Tab from content script after 10s delay.');
                     chrome.runtime.sendMessage({ action: 'closeMainTab' });
-                }, 2000);
+                }, 10000);
             }
 
             return;
@@ -649,5 +649,16 @@ function manageIntroModal(preferTodayClose: boolean) {
 }
 
 // Entry Point
-const settings = await loadSettings();
-dispatchPageLogic(settings);
+(async () => {
+    try {
+        console.log('[Content] Script Entry Point Started');
+        console.log('[Content] Hash at load:', globalThis.location.hash);
+
+        const settings = await loadSettings();
+        console.log('[Content] Settings loaded:', settings);
+
+        dispatchPageLogic(settings);
+    } catch (e) {
+        console.error('[Content] CRITICAL ERROR during initialization:', e);
+    }
+})();
