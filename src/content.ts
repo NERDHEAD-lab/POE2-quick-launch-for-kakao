@@ -82,7 +82,7 @@ const Poe2MainHandler: PageHandler = {
                                 );
                                 return;
                             }
-                            if (response && response.success) {
+                            if (response?.success) {
                                 console.log('[Content] ACK sent successfully via proxy.');
                             } else {
                                 console.error(
@@ -472,7 +472,10 @@ function showTutorialToast(message: string) {
         gap: 8px;
         animation: slideDown 0.3s ease-out;
     `;
-    toast.innerHTML = message;
+    message.split('<br>').forEach((line, index) => {
+        if (index > 0) toast.appendChild(document.createElement('br'));
+        toast.appendChild(document.createTextNode(line));
+    });
     document.body.appendChild(toast);
 
     // Auto remove after 10s
