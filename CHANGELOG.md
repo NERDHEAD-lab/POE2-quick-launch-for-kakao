@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.3](https://github.com/NERDHEAD-lab/POE2-quick-launch-for-kakao/compare/1.2.2...1.2.3) (2026-01-04)
+
+
+### Bug Fixes
+
+* 파이어폭스 지원 패치로 인해 고장난 자동 게임 시작 동작 정상화 ([4dc9b16](https://github.com/NERDHEAD-lab/POE2-quick-launch-for-kakao/commit/4dc9b16f53d2bba2cab0c086e4c130f3ef0a116c))
+
 ## [1.2.2](https://github.com/NERDHEAD-lab/POE2-quick-launch-for-kakao/compare/1.2.1...1.2.2) (2026-01-04)
 
 
