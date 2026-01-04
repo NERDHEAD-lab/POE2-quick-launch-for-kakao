@@ -6,14 +6,12 @@ export function safeClick(element: HTMLElement) {
 
     if (
         element instanceof HTMLAnchorElement &&
-        element.href.toLowerCase().startsWith('javascript:')
+        element.href.toLowerCase().startsWith('javascript:') // NOSONAR - Necessary for legacy Kakao Games launcher handling
     ) {
         const event = new MouseEvent('click', {
-            view: globalThis as unknown as Window,
             bubbles: true,
             cancelable: true
         });
-        event.preventDefault();
         element.dispatchEvent(event);
         return;
     }
@@ -24,7 +22,6 @@ export function safeClick(element: HTMLElement) {
     }
 
     const event = new MouseEvent('click', {
-        view: globalThis as unknown as Window,
         bubbles: true,
         cancelable: true
     });
