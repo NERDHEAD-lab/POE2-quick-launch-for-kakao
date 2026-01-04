@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.2.1](https://github.com/NERDHEAD-lab/POE2-quick-launch-for-kakao/compare/1.2.0...1.2.1) (2026-01-04)
+
+
+### Bug Fixes
+
+* 파이어폭스 AMO 배포 정책에 따른 데이터 수집 권한 명시 추가 ([17c96a7](https://github.com/NERDHEAD-lab/POE2-quick-launch-for-kakao/commit/17c96a79ab6e9418f5681d16146b6db13cb15a81))
+* 파이어폭스에서 권장하지 않는 문법 대체 ( innerHTML -&gt; appendChild ) ([1d2be13](https://github.com/NERDHEAD-lab/POE2-quick-launch-for-kakao/commit/1d2be137eced2f9b1d11f551544d0af7863a6273))
+
 ## [1.2.0](https://github.com/NERDHEAD-lab/POE2-quick-launch-for-kakao/compare/1.1.0...1.2.0) (2026-01-04)
 
 
