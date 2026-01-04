@@ -66,18 +66,28 @@ Kakao Games의 Path of Exile (1 & 2) 웹 실행을 간소화하고 자동화하�
 2. **빌드**:
 
     ```bash
-    npm run build
+    # Chrome용 빌드 및 압축
+    npm run zip
+
+    # Firefox용 빌드 및 압축 (dist-firefox 폴더 생성)
+    npm run zip:firefox
+
     # 또는 변경 사항 실시간 감지 (개발 모드)
     npm run dev
     ```
 
-    위 명령어를 실행하면 `dist` 폴더에 확장 프로그램 파일이 생성됩니다.
+    각 명령어 실행 시 `dist` 또는 `dist-firefox` 폴더에 확장 프로그램 파일이 생성됩니다.
 
 3. **브라우저에 확장 프로그램 로드**:
-    - **Chrome / Edge / Whale 등 크로미움 기반 브라우저**에서 주소창에 `chrome://extensions/` 입력
-    - 우측 상단 **"개발자 모드"** 스위치 켜기
-    - 좌측 상단 **"압축해제된 확장 프로그램을 로드합니다"** 클릭
-    - 프로젝트 폴더 내의 `dist` 폴더 선택
+    - **Chrome / Edge / Whale 등 크로미움 기반 브라우저**:
+        - 주소창에 `chrome://extensions/` 입력
+        - 우측 상단 **"개발자 모드"** 스위치 켜기
+        - 좌측 상단 **"압축해제된 확장 프로그램을 로드합니다"** 클릭 후 프로젝트 폴더 내의 `dist` 폴더 선택
+
+    - **Firefox**:
+        - 주소창에 `about:debugging#/runtime/this-firefox` 입력
+        - 우측 상단 **"임시 부가 기능 로드..."** 버튼 클릭
+        - 프로젝트 폴더 내의 `dist-firefox/manifest.json` 파일 선택 (폴더째 로드 가능)
 
 ### 코드 스타일 및 컨트리뷰션 가이드
 
