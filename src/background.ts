@@ -76,15 +76,6 @@ chrome.runtime.onMessage.addListener((request: MessageRequest, sender, sendRespo
                 });
             }, 1000);
         });
-    } else if (request.action === 'checkAutoSequence') {
-        chrome.storage.session.get(['isAutoSequence'], (result) => {
-            sendResponse({ isAutoSequence: result['isAutoSequence'] });
-        });
-        return true; // Will respond asynchronously
-    } else if (request.action === 'setAutoSequence') {
-        const val = request.value;
-        console.log('[Background] Setting Auto Sequence flag to:', val);
-        chrome.storage.session.set({ isAutoSequence: val });
     }
 
     // -----------------------------------------------------------------------------

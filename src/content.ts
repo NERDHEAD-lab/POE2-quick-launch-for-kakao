@@ -95,10 +95,6 @@ const Poe2MainHandler: PageHandler = {
                 }
             }
 
-            // Register this tab as the Main Game Tab for later closing
-            chrome.runtime.sendMessage({ action: 'registerMainTab' });
-
-            chrome.runtime.sendMessage({ action: 'setAutoSequence', value: true });
             startMainPagePolling(settings, SELECTORS.POE2.BTN_GAME_START);
         }
     }
