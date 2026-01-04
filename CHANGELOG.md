@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.2](https://github.com/NERDHEAD-lab/POE2-quick-launch-for-kakao/compare/1.2.1...1.2.2) (2026-01-04)
+
+
+### Bug Fixes
+
+* 파이어폭스에서 지원하지 않는 문법 대체 및 빌드 안정화 ([58aacbe](https://github.com/NERDHEAD-lab/POE2-quick-launch-for-kakao/commit/58aacbe4e95694c969ea5ef346782b0106257469))
+
 ## [1.2.1](https://github.com/NERDHEAD-lab/POE2-quick-launch-for-kakao/compare/1.2.0...1.2.1) (2026-01-04)
 
 
