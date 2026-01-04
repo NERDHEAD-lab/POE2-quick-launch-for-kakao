@@ -1,6 +1,7 @@
 import { BUTLER_PARAMS } from './constants';
 import { SELECTORS } from './domSelectors';
 import { loadSettings, AppSettings, STORAGE_KEYS } from './storage';
+import { LogData } from './types/message';
 import { safeClick, observeAndInteract } from './utils/dom';
 
 console.log('POE / POE2 Quick Launch Content Script Loaded');
@@ -31,6 +32,38 @@ interface PageHandler {
     allowedReferrers?: string[];
     execute: (settings: AppSettings) => void;
 }
+
+// -----------------------------------------------------------------------------
+// Logging Helper
+// -----------------------------------------------------------------------------
+
+function remoteLog(handlerName: string, message?: string) {
+    const logData: LogData = {
+        handlerName,
+        url: globalThis.location.href,
+        referrer: document.referrer,
+        message,
+        timestamp: new Date().toISOString()
+    };
+
+    chrome.runtime.sendMessage({ action: 'remoteLog', logData }).catch(() => {
+        // Silent catch for background port disconnection
+    });
+}
+
+// Receive forwarded logs from background (printed on Main Page)
+chrome.runtime.onMessage.addListener((message) => {
+    if (message.action === 'forwardLog' && message.logData) {
+        const { handlerName, url, referrer, message: msg, timestamp } = message.logData as LogData;
+        const logPrefix = `[Remote Log][${timestamp}][${handlerName}]`;
+
+        console.group(logPrefix);
+        console.log(`URL: ${url}`);
+        console.log(`Referrer: ${referrer}`);
+        if (msg) console.log(`Message: ${msg}`);
+        console.groupEnd();
+    }
+});
 
 // -----------------------------------------------------------------------------
 // Handlers
@@ -248,6 +281,7 @@ function dispatchPageLogic(settings: AppSettings) {
         if (!handler.match(currentUrl)) continue;
 
         console.log(`[Handler Match] ${handler.name} matched.`);
+        remoteLog(handler.name, 'Handler triggered');
 
         // Referrer Validation
         if (handler.allowedReferrers) {
@@ -258,6 +292,7 @@ function dispatchPageLogic(settings: AppSettings) {
                 console.warn(
                     `[Handler Skip] ${handler.name} - Invalid Referrer: "${currentReferrer}"`
                 );
+                remoteLog(handler.name, `Invalid Referrer: "${currentReferrer}"`);
                 return;
             }
         }

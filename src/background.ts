@@ -1,3 +1,5 @@
+import { MessageRequest } from './types/message';
+
 // Message types
 console.log('!!! Background Service Worker Initialized !!!');
 
@@ -29,13 +31,6 @@ chrome.runtime.onInstalled.addListener((details) => {
         });
     }
 });
-
-interface MessageRequest {
-    action: string;
-    shouldCloseMainPage?: boolean;
-    value?: boolean;
-    port?: number;
-}
 
 chrome.runtime.onMessage.addListener((request: MessageRequest, sender, sendResponse) => {
     console.log('Background received message:', request, 'from sender:', sender);
@@ -117,5 +112,29 @@ chrome.runtime.onMessage.addListener((request: MessageRequest, sender, sendRespo
             })
             .catch((err) => sendResponse({ success: false, error: err.toString() }));
         return true; // Async response
+    }
+
+    if (request.action === 'remoteLog' && request.logData) {
+        const { handlerName, url, referrer, message, timestamp } = request.logData;
+        const logPrefix = `[Remote Log][${timestamp}][${handlerName}]`;
+
+        console.log(`${logPrefix} URL: ${url}`);
+        console.log(`${logPrefix} Referrer: ${referrer}`);
+        if (message) console.log(`${logPrefix} Message: ${message}`);
+
+        // Forward to Main Tab if exists
+        chrome.storage.session.get(['mainGameTabId'], (result) => {
+            const tabId = result['mainGameTabId'] as number | undefined;
+            if (tabId) {
+                chrome.tabs
+                    .sendMessage(tabId, {
+                        action: 'forwardLog',
+                        logData: request.logData
+                    })
+                    .catch(() => {
+                        // Ignore errors if the tab is not in a state to receive messages
+                    });
+            }
+        });
     }
 });
