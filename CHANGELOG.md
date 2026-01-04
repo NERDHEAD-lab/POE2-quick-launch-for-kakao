@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.2.4](https://github.com/NERDHEAD-lab/POE2-quick-launch-for-kakao/compare/1.2.3...1.2.4) (2026-01-04)
+
+
+### Bug Fixes
+
+* 일년동안 방치하던 게임 시작 프로세스가 플러그이 개발이 시작되자 개선되었습니다. 관련 이슈로 자동 탭 닫기가 동작하지 않는 문제를 개선. ([ef3e0a7](https://github.com/NERDHEAD-lab/POE2-quick-launch-for-kakao/commit/ef3e0a7e91d201dcb80c4a0afd6672466f2fc01c))
+* 일부 상황에서 게임을 실행 했음에도 "자동 실행 후 탭 닫기가 불가능 한 상황" 수정 ([883aad0](https://github.com/NERDHEAD-lab/POE2-quick-launch-for-kakao/commit/883aad0bef38ff29b295b8f93ab1b8ce32d59b68))
+
 ## [1.2.3](https://github.com/NERDHEAD-lab/POE2-quick-launch-for-kakao/compare/1.2.2...1.2.3) (2026-01-04)
 
 
