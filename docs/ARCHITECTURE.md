@@ -32,7 +32,43 @@
 > **개발 서버 상태 확인**:
 > AI 에이전트는 작업 시작 전 `netstat -ano | findstr :5173` 명령 등을 통해 개발 서버가 실행 중인지 확인할 수 있습니다. 만약 서버가 꺼져 있다면 사용자에게 실행을 요청하거나 직접 실행 여부를 문의하게 됩니다.
 
-## 2. Directory Structure
+## 2. Game Start Flows
+
+플러그인을 통한 각 게임별 자동 실행 흐름입니다. POE1과 POE2는 진입점과 일부 전처리를 제외한 핵심 로직이 동일합니다.
+
+```mermaid
+graph TD
+    subgraph Homepage["홈페이지 진입"]
+        A1["PoeMainHandler (POE1)"]
+        A2["Poe2MainHandler (POE2)"]
+    end
+
+    A1 -- "Auto Start (#autoStart)" --> B["메인 페이지 폴링"]
+    A2 -- "Auto Start (#autoStart)" --> A2_1["인트로 모달 처리 (자동 닫기)"]
+    A2_1 --> B
+
+    B -- "게임 시작 버튼 클릭" --> C["LauncherCheckHandler (런처 체크)"]
+
+    C -- "로그인 필요 시 (자동 이동)" --> L1["DaumLoginHandler (카카오 로그인 클릭)"]
+    L1 --> L2["KakaoAuthHandler (동의/계속하기 클릭)"]
+    L2 --> C
+
+    C -- "게임 시작 클릭 (자동 / 튜토리얼 해제)" --> D{"지정 PC 설정?"}
+
+    D -- "Yes" --> E["LauncherCompletionHandler (지정 PC 완료)"]
+    D -- "No" --> F["게임 실행 완료 (탭 닫기)"]
+    E --> F
+
+    style A1 fill:#1a1510,color:#dfcf99,stroke:#dfcf99
+    style A2 fill:#0c150c,color:#aaddaa,stroke:#aaddaa
+    style L1 fill:#fee500,color:#000000,stroke:#000000
+    style L2 fill:#fee500,color:#000000,stroke:#000000
+    style F fill:#f9f,stroke:#333,stroke-width:2px
+```
+
+---
+
+## 3. Directory Structure
 
 ```text
 /
@@ -52,7 +88,7 @@
 └── manifest.json       # 확장 프로그램 설정
 ```
 
-## 3. Coding Conventions
+## 4. Coding Conventions
 
 Node.js 및 TypeScript 표준 컨벤션을 따릅니다.
 
@@ -69,7 +105,7 @@ Node.js 및 TypeScript 표준 컨벤션을 따릅니다.
 - **Storage Management**: `chrome.storage.local`을 래핑하여 비동기 데이터 처리를 간소화 (Storage Wrapper 패턴)
 - **Cross Browser Support**: 매니페스트 설정 및 빌드 스크립트를 통해 Chrome과 Firefox 간의 호환성 확보
 
-## 4. Glossary & Terminology
+## 5. Glossary & Terminology
 
 프로젝트 내에서 사용하는 주요 명칭 및 별칭입니다.
 
@@ -77,7 +113,7 @@ Node.js 및 TypeScript 표준 컨벤션을 따릅니다.
 - **별칭**: 빠른실행 플러그인, 플러그인 (Plugin)
 - **설명**: 사용자와의 소통 시 편의를 위해 "빠른실행 플러그인" 또는 간단히 "플러그인"이라 지칭할 수 있습니다.
 
-## 5. Architecture Decision Records (ADR)
+## 6. Architecture Decision Records (ADR)
 
 ### ADR-001: Project Aliasing for Communication
 

@@ -1,6 +1,7 @@
 import { BUTLER_PARAMS } from './constants';
 import { SELECTORS } from './domSelectors';
 import { loadSettings, AppSettings, STORAGE_KEYS } from './storage';
+import { LogData } from './types/message';
 import { safeClick, observeAndInteract } from './utils/dom';
 
 console.log('POE / POE2 Quick Launch Content Script Loaded');
@@ -31,6 +32,38 @@ interface PageHandler {
     allowedReferrers?: string[];
     execute: (settings: AppSettings) => void;
 }
+
+// -----------------------------------------------------------------------------
+// Logging Helper
+// -----------------------------------------------------------------------------
+
+function remoteLog(handlerName: string, message?: string) {
+    const logData: LogData = {
+        handlerName,
+        url: globalThis.location.href,
+        referrer: document.referrer,
+        message,
+        timestamp: new Date().toISOString()
+    };
+
+    chrome.runtime.sendMessage({ action: 'remoteLog', logData }).catch(() => {
+        // Silent catch for background port disconnection
+    });
+}
+
+// Receive forwarded logs from background (printed on Main Page)
+chrome.runtime.onMessage.addListener((message) => {
+    if (message.action === 'forwardLog' && message.logData) {
+        const { handlerName, url, referrer, message: msg, timestamp } = message.logData as LogData;
+        const logPrefix = `[Remote Log][${timestamp}][${handlerName}]`;
+
+        console.group(logPrefix);
+        console.log(`URL: ${url}`);
+        console.log(`Referrer: ${referrer}`);
+        if (msg) console.log(`Message: ${msg}`);
+        console.groupEnd();
+    }
+});
 
 // -----------------------------------------------------------------------------
 // Handlers
@@ -95,10 +128,6 @@ const Poe2MainHandler: PageHandler = {
                 }
             }
 
-            // Register this tab as the Main Game Tab for later closing
-            chrome.runtime.sendMessage({ action: 'registerMainTab' });
-
-            chrome.runtime.sendMessage({ action: 'setAutoSequence', value: true });
             startMainPagePolling(settings, SELECTORS.POE2.BTN_GAME_START);
         }
     }
@@ -123,7 +152,35 @@ const LauncherCheckHandler: PageHandler = {
     ],
     execute: (settings) => {
         console.log(`[Handler Execute] ${LauncherCheckHandler.description}`);
-        performLauncherPageLogic(settings);
+        remoteLog(LauncherCheckHandler.name, 'Handler Started');
+
+        // 1. txId Check (Redirect from Security Center)
+        // If txId exists, it's likely already authorized, so just close the tab.
+        if (globalThis.location.search.includes('txId=')) {
+            console.log(
+                'txId detected after redirect. Presuming authorization complete. Closing tab...'
+            );
+            remoteLog(LauncherCheckHandler.name, 'txId detected. Triggering completion.');
+            handleCompletionPage(settings);
+            return;
+        }
+
+        // 2. Safety Timer (2s)
+        // If we are still on this page after 2 seconds, assume game has started (Auto-start/Simplified mode).
+        const safetyTimer = setTimeout(() => {
+            console.log(
+                'Safety Timer triggered (2s passed). Presuming game started. Closing tab...'
+            );
+            remoteLog(LauncherCheckHandler.name, 'Safety Timer expired. Closing tab.');
+            handleCompletionPage(settings);
+        }, 2000);
+
+        // 3. Perform Logic with Success Callback
+        performLauncherPageLogic(settings, () => {
+            console.log('Launcher success recognized by callback. Clearing safety timer.');
+            clearTimeout(safetyTimer);
+            handleCompletionPage(settings);
+        });
     }
 };
 
@@ -210,7 +267,7 @@ const LauncherCompletionHandler: PageHandler = {
         const gameCode = url.searchParams.get('gameCode');
         return gameCode === 'poe' || gameCode === 'poe2';
     },
-    allowedReferrers: ['security-center.game.daum.net'],
+    allowedReferrers: ['security-center.game.daum.net', 'pubsvc.game.daum.net'],
     execute: (settings) => {
         console.log(`[Handler Execute] ${LauncherCompletionHandler.description}`);
 
@@ -252,6 +309,7 @@ function dispatchPageLogic(settings: AppSettings) {
         if (!handler.match(currentUrl)) continue;
 
         console.log(`[Handler Match] ${handler.name} matched.`);
+        remoteLog(handler.name, 'Handler triggered');
 
         // Referrer Validation
         if (handler.allowedReferrers) {
@@ -262,6 +320,7 @@ function dispatchPageLogic(settings: AppSettings) {
                 console.warn(
                     `[Handler Skip] ${handler.name} - Invalid Referrer: "${currentReferrer}"`
                 );
+                remoteLog(handler.name, `Invalid Referrer: "${currentReferrer}"`);
                 return;
             }
         }
@@ -322,6 +381,14 @@ function startMainPagePolling(_settings: AppSettings, buttonSelector: string) {
             console.log('Main Page Game Start clicked.');
             console.log('Game Start Clicked. Waiting for Launcher Completion to close tab.');
 
+            // Safety Trigger: In case the background script fails to close our tab (e.g. port disconnected)
+            if (_settings.closeTab) {
+                setTimeout(() => {
+                    console.log('[Safety] Closing Main Tab from content script after 2s delay.');
+                    chrome.runtime.sendMessage({ action: 'closeMainTab' });
+                }, 2000);
+            }
+
             return;
         }
 
@@ -345,18 +412,25 @@ function handleCompletionPage(settings: AppSettings) {
         // Once completed, popup permission IS granted (presumably).
         // But for safety/feedback, let's keep it open this one time.
     } else if (settings.closeTab) {
-        // [Safety Check]
-        // Structurally, 'closeTab' should be false if 'isTutorialMode' is true (enforced by UI in popup.ts).
-        // However, we double-check here to prevent any edge cases where storage might be inconsistent.
-        console.log('Closing Main Tab (as per settings)...');
+        console.log('Closing Main & Launcher Tabs (as per settings)...');
+        // Close the homepage
         chrome.runtime.sendMessage({ action: 'closeMainTab' });
+        // Close the launcher/completion page
+        chrome.runtime.sendMessage({ action: 'closeTab' });
     }
 }
 
-function performLauncherPageLogic(settings: AppSettings) {
+function performLauncherPageLogic(settings: AppSettings, onSuccess?: () => void) {
+    console.log('[performLauncherPageLogic] Starting observation...');
+    remoteLog('performLauncherPageLogic', 'Observation started');
+
     observeAndInteract((obs) => {
         const query = SELECTORS.LAUNCHER.GAME_START_BUTTONS.join(', ');
         const buttons = Array.from(document.querySelectorAll(query + ', .popup__link--confirm'));
+
+        console.log(
+            `[performLauncherPageLogic] Found ${buttons.length} candidate buttons via query: ${query}`
+        );
 
         // 1. Check for Login Required Popup
         if (
@@ -364,7 +438,9 @@ function performLauncherPageLogic(settings: AppSettings) {
                 document.body.innerText.includes(text)
             )
         ) {
-            // ... (Existing Login Popup Logic)
+            console.log('[performLauncherPageLogic] Login Required popup detected by text.');
+            remoteLog('performLauncherPageLogic', 'Login Required Detected');
+
             const confirmBtn = buttons.find(
                 (el) =>
                     el.classList.contains(SELECTORS.LAUNCHER.BTN_CONFIRM.substring(1)) ||
@@ -373,6 +449,7 @@ function performLauncherPageLogic(settings: AppSettings) {
 
             if (confirmBtn) {
                 console.log('Found "Confirm" button for Login Popup. Clicking...');
+                remoteLog('performLauncherPageLogic', 'Clicking Login Confirm Button');
                 safeClick(confirmBtn as HTMLElement);
                 if (obs) obs.disconnect();
                 return true;
@@ -388,11 +465,23 @@ function performLauncherPageLogic(settings: AppSettings) {
         });
 
         if (gameStartBtn) {
-            console.log('Launcher Game Start found. Clicking...');
-            safeClick(gameStartBtn as HTMLElement);
+            const btnEl = gameStartBtn as HTMLElement;
+            console.log(
+                `[performLauncherPageLogic] Game Start button found: ${btnEl.className} (id: ${btnEl.id})`
+            );
+            remoteLog('performLauncherPageLogic', `Game Start Found: ${btnEl.innerText}`);
+
+            safeClick(btnEl);
+
+            // Handle success callback (e.g., closing tab)
+            if (onSuccess) {
+                console.log('[performLauncherPageLogic] Success callback triggered.');
+                onSuccess();
+            }
 
             // Note: We NO LONGER close the tab here. We wait for Completion.
             console.log('Launcher Button Clicked. Logic continues...');
+            remoteLog('performLauncherPageLogic', 'Button Clicked.');
 
             // Fallback Logic (Only if it was an auto-start attempt)
             if (globalThis.location.hash.includes('#autoStart') || settings.isTutorialMode) {
@@ -406,6 +495,20 @@ function performLauncherPageLogic(settings: AppSettings) {
 
             if (obs) obs.disconnect();
             return true;
+        } else {
+            // Log when buttons are found but none match our game start criteria
+            if (buttons.length > 0) {
+                const buttonInfo = buttons
+                    .map((b) => `[${(b as HTMLElement).innerText?.trim()}]`)
+                    .join(', ');
+                console.log(
+                    `[performLauncherPageLogic] Found ${buttons.length} buttons but none matched: ${buttonInfo}`
+                );
+                remoteLog(
+                    'performLauncherPageLogic',
+                    `No match found among buttons: ${buttonInfo}`
+                );
+            }
         }
         return false;
     });
