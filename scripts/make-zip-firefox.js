@@ -44,7 +44,7 @@ const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
 manifest.browser_specific_settings = {
     gecko: {
         id: 'poe2-quick-launch@nerdhead.lab', // Fixed ID for updates
-        strict_min_version: '109.0',
+        strict_min_version: '142.0',
         data_collection_permissions: {
             required: ['none']
         }
