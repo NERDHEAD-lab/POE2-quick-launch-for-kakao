@@ -151,36 +151,17 @@ const LauncherCheckHandler: PageHandler = {
         'pubsvc.game.daum.net'
     ],
     execute: (settings) => {
+        const urlParams = new URLSearchParams(globalThis.location.search);
+        const paramsObj: Record<string, string> = {};
+        urlParams.forEach((val, key) => (paramsObj[key] = val));
+
         console.log(`[Handler Execute] ${LauncherCheckHandler.description}`);
-        remoteLog(LauncherCheckHandler.name, 'Handler Started');
+        remoteLog(
+            LauncherCheckHandler.name,
+            `Handler Started immediately. Params: ${JSON.stringify(paramsObj)}`
+        );
 
-        // 1. txId Check (Redirect from Security Center)
-        // If txId exists, it's likely already authorized, so just close the tab.
-        if (globalThis.location.search.includes('txId=')) {
-            console.log(
-                'txId detected after redirect. Presuming authorization complete. Closing tab...'
-            );
-            remoteLog(LauncherCheckHandler.name, 'txId detected. Triggering completion.');
-            handleCompletionPage(settings);
-            return;
-        }
-
-        // 2. Safety Timer (2s)
-        // If we are still on this page after 2 seconds, assume game has started (Auto-start/Simplified mode).
-        const safetyTimer = setTimeout(() => {
-            console.log(
-                'Safety Timer triggered (2s passed). Presuming game started. Closing tab...'
-            );
-            remoteLog(LauncherCheckHandler.name, 'Safety Timer expired. Closing tab.');
-            handleCompletionPage(settings);
-        }, 2000);
-
-        // 3. Perform Logic with Success Callback
-        performLauncherPageLogic(settings, () => {
-            console.log('Launcher success recognized by callback. Clearing safety timer.');
-            clearTimeout(safetyTimer);
-            handleCompletionPage(settings);
-        });
+        performLauncherPageLogic(settings);
     }
 };
 
@@ -381,14 +362,6 @@ function startMainPagePolling(_settings: AppSettings, buttonSelector: string) {
             console.log('Main Page Game Start clicked.');
             console.log('Game Start Clicked. Waiting for Launcher Completion to close tab.');
 
-            // Safety Trigger: In case the background script fails to close our tab (e.g. port disconnected)
-            if (_settings.closeTab) {
-                setTimeout(() => {
-                    console.log('[Safety] Closing Main Tab from content script after 10s delay.');
-                    chrome.runtime.sendMessage({ action: 'closeMainTab' });
-                }, 10000);
-            }
-
             return;
         }
 
@@ -420,7 +393,7 @@ function handleCompletionPage(settings: AppSettings) {
     }
 }
 
-function performLauncherPageLogic(settings: AppSettings, onSuccess?: () => void) {
+function performLauncherPageLogic(settings: AppSettings) {
     console.log('[performLauncherPageLogic] Starting observation...');
     remoteLog('performLauncherPageLogic', 'Observation started');
 
@@ -473,12 +446,6 @@ function performLauncherPageLogic(settings: AppSettings, onSuccess?: () => void)
 
             safeClick(btnEl);
 
-            // Handle success callback (e.g., closing tab)
-            if (onSuccess) {
-                console.log('[performLauncherPageLogic] Success callback triggered.');
-                onSuccess();
-            }
-
             // Note: We NO LONGER close the tab here. We wait for Completion.
             console.log('Launcher Button Clicked. Logic continues...');
             remoteLog('performLauncherPageLogic', 'Button Clicked.');
@@ -508,6 +475,11 @@ function performLauncherPageLogic(settings: AppSettings, onSuccess?: () => void)
                     'performLauncherPageLogic',
                     `No match found among buttons: ${buttonInfo}`
                 );
+
+                console.warn(
+                    '[performLauncherPageLogic] Mismatch detected. Triggering delayed tab close (2s)...'
+                );
+                chrome.runtime.sendMessage({ action: 'delayedCloseTab' });
             }
         }
         return false;

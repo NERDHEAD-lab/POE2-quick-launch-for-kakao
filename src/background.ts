@@ -52,6 +52,26 @@ chrome.runtime.onMessage.addListener((request: MessageRequest, sender, sendRespo
                 });
             }, 1000);
         }
+    } else if (request.action === 'delayedCloseTab') {
+        const tabId = sender.tab?.id;
+        if (tabId) {
+            console.log(
+                '[Background] Received delayedCloseTab signal. Closing current tab in 2s:',
+                tabId
+            );
+            setTimeout(() => {
+                chrome.tabs.remove(tabId, () => {
+                    if (chrome.runtime.lastError) {
+                        console.warn(
+                            '[Background] Failed to close tab (maybe already closed):',
+                            chrome.runtime.lastError
+                        );
+                    } else {
+                        console.log('[Background] Launcher tab closed via delayedCloseTab.');
+                    }
+                });
+            }, 2000);
+        }
     }
 
     if (request.action === 'registerMainTab') {
