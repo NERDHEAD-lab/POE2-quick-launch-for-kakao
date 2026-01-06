@@ -479,10 +479,12 @@ function performLauncherPageLogic(settings: AppSettings) {
                     `No match found among buttons: ${buttonInfo}`
                 );
 
-                console.log(
-                    '[performLauncherPageLogic] Mismatch detected. Triggering Smart Timeout (2s)...'
-                );
-                chrome.runtime.sendMessage({ action: 'notifyMismatchDetected' });
+                if (settings.closeTab) {
+                    console.log(
+                        '[performLauncherPageLogic] Mismatch detected. Triggering Smart Timeout (2s)...'
+                    );
+                    chrome.runtime.sendMessage({ action: 'notifyMismatchDetected' });
+                }
             }
         }
         return false;
