@@ -18,9 +18,10 @@
 ### Build & Packaging Commands
 
 - `npm run dev`: 개발 모드 (Vite HMR). **Port 5173**을 사용합니다.
-- `npm run zip`: **[권장]** Chrome용 빌드 및 압축 (내부적으로 `npm run build` 실행)
-- `npm run zip:firefox`: **[권장]** Firefox용 빌드 및 압축 (내부적으로 `npm run build` 실행)
-- `npm run build`: 프로덕션 빌드 (개별 실행 불필요, `zip` 명령에 포함됨)
+- `npm run package`: **[권장]** Chrome 및 Firefox용 통합 빌드/패키징 (Windows 호환)
+- `npm run zip`: Chrome용 개별 빌드/패키징
+- `npm run zip:firefox`: Firefox용 개별 빌드/패키징
+- `npm run build`: 프로덕션 빌드 (개별 실행 불필요)
 - `npm run test`: Vitest를 이용한 유닛 테스트
 
 ### Development Environment
@@ -126,8 +127,8 @@ Node.js 및 TypeScript 표준 컨벤션을 따릅니다.
 
 - **Context**: 빌드와 패키징(압축) 과정이 분리되어 있어 실수로 구버전이 패키징될 위험이 있음.
 - **Decision**:
-    1. `npm run zip` 및 `npm run zip:firefox` 명령어가 `npm run build`를 선행하도록 스크립트를 구성하고 문서를 이를 반영함.
-    2. 개발자는 별도의 `npm run build` 없이 `zip` 명령어만으로 최신 빌드본을 생성하도록 함.
+    1. `npm run package` (또는 `zip` 계열) 명령어가 `npm run build`를 선행하도록 스크립트를 구성하고 문서를 이를 반영함.
+    2. 개발자는 별도의 `npm run build` 없이 `package` 명령어만으로 최신 빌드본을 생성하도록 함.
 - **Status**: Accepted
 - **Date**: 2026-01-04
 
@@ -143,6 +144,6 @@ Node.js 및 TypeScript 표준 컨벤션을 따릅니다.
 ### ADR-004: Mandatory Build Verification
 
 - **Context**: 코드 수정 후 빌드 안정성을 보장하기 위해 즉각적인 검증이 필요함.
-- **Decision**: 코드를 수정한 후에는 반드시 `npm run zip` 및 `npm run zip:firefox` 명령어를 실행하여 빌드 및 패키징이 정상적으로 이루어지는지 검증해야 함.
+- **Decision**: 코드를 수정한 후에는 반드시 `npm run package` 명령어를 실행하여 빌드 및 패키징(Chrome & Firefox)이 정상적으로 이루어지는지 검증해야 함.
 - **Status**: Accepted
 - **Date**: 2026-01-06

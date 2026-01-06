@@ -35,8 +35,7 @@ jobs:
               if: ${{ steps.release.outputs.release_created }}
               run: |
                   npm ci
-                  npm run zip
-                  npm run zip:firefox
+                  npm run package
 
             - name: Upload release
               uses: softprops/action-gh-release@a06a81a03ee405af7f2048a818ed3f03bbf83c7b # v2.5.0
