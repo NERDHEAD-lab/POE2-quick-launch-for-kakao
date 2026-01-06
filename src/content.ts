@@ -151,36 +151,17 @@ const LauncherCheckHandler: PageHandler = {
         'pubsvc.game.daum.net'
     ],
     execute: (settings) => {
+        const urlParams = new URLSearchParams(globalThis.location.search);
+        const paramsObj: Record<string, string> = {};
+        urlParams.forEach((val, key) => (paramsObj[key] = val));
+
         console.log(`[Handler Execute] ${LauncherCheckHandler.description}`);
-        remoteLog(LauncherCheckHandler.name, 'Handler Started');
+        remoteLog(
+            LauncherCheckHandler.name,
+            `Handler Started immediately. Params: ${JSON.stringify(paramsObj)}`
+        );
 
-        // 1. txId Check (Redirect from Security Center)
-        // If txId exists, it's likely already authorized, so just close the tab.
-        if (globalThis.location.search.includes('txId=')) {
-            console.log(
-                'txId detected after redirect. Presuming authorization complete. Closing tab...'
-            );
-            remoteLog(LauncherCheckHandler.name, 'txId detected. Triggering completion.');
-            handleCompletionPage(settings);
-            return;
-        }
-
-        // 2. Safety Timer (2s)
-        // If we are still on this page after 2 seconds, assume game has started (Auto-start/Simplified mode).
-        const safetyTimer = setTimeout(() => {
-            console.log(
-                'Safety Timer triggered (2s passed). Presuming game started. Closing tab...'
-            );
-            remoteLog(LauncherCheckHandler.name, 'Safety Timer expired. Closing tab.');
-            handleCompletionPage(settings);
-        }, 2000);
-
-        // 3. Perform Logic with Success Callback
-        performLauncherPageLogic(settings, () => {
-            console.log('Launcher success recognized by callback. Clearing safety timer.');
-            clearTimeout(safetyTimer);
-            handleCompletionPage(settings);
-        });
+        performLauncherPageLogic(settings);
     }
 };
 
@@ -248,6 +229,7 @@ const SecurityCenterHandler: PageHandler = {
     allowedReferrers: ['pubsvc.game.daum.net', 'accounts.kakao.com', 'kauth.kakao.com'],
     execute: (_settings) => {
         console.log(`[Handler Execute] ${SecurityCenterHandler.description}`);
+        chrome.runtime.sendMessage({ action: 'notifyHandlerTriggered' });
         performSecurityPageLogic();
     }
 };
@@ -270,6 +252,7 @@ const LauncherCompletionHandler: PageHandler = {
     allowedReferrers: ['security-center.game.daum.net', 'pubsvc.game.daum.net'],
     execute: (settings) => {
         console.log(`[Handler Execute] ${LauncherCompletionHandler.description}`);
+        chrome.runtime.sendMessage({ action: 'notifyHandlerTriggered' });
 
         // 1. Process Completion (Signal Close Tab, Update Tutorial Mode) - execute FIRST
         handleCompletionPage(settings);
@@ -281,14 +264,17 @@ const LauncherCompletionHandler: PageHandler = {
 
 // Priority list (order matters)
 const HANDLERS: PageHandler[] = [
+    // 홈페이지 헨들러
     PoeMainHandler,
     Poe2MainHandler,
-    LauncherCheckHandler,
+    // 로그인 하지 않을 경우에만 동작하는 헨들러
+    LauncherCheckHandler, //로그인 되었을 경우에는 팝업이 발생은 하지만 알아서 처리됨. 플러그인에서는 관여 X
     DaumLoginHandler,
     KakaoManualLoginHandler,
     KakaoAuthHandler,
-    SecurityCenterHandler,
-    LauncherCompletionHandler
+    // 게임 시작에 관여하는 헨들러
+    SecurityCenterHandler, // 지정 PC 사용 여부 확인
+    LauncherCompletionHandler // 게임 실행
 ];
 
 // -----------------------------------------------------------------------------
@@ -381,14 +367,6 @@ function startMainPagePolling(_settings: AppSettings, buttonSelector: string) {
             console.log('Main Page Game Start clicked.');
             console.log('Game Start Clicked. Waiting for Launcher Completion to close tab.');
 
-            // Safety Trigger: In case the background script fails to close our tab (e.g. port disconnected)
-            if (_settings.closeTab) {
-                setTimeout(() => {
-                    console.log('[Safety] Closing Main Tab from content script after 2s delay.');
-                    chrome.runtime.sendMessage({ action: 'closeMainTab' });
-                }, 2000);
-            }
-
             return;
         }
 
@@ -412,15 +390,13 @@ function handleCompletionPage(settings: AppSettings) {
         // Once completed, popup permission IS granted (presumably).
         // But for safety/feedback, let's keep it open this one time.
     } else if (settings.closeTab) {
-        console.log('Closing Main & Launcher Tabs (as per settings)...');
+        console.log('Closing Main Tab (as per settings)...');
         // Close the homepage
         chrome.runtime.sendMessage({ action: 'closeMainTab' });
-        // Close the launcher/completion page
-        chrome.runtime.sendMessage({ action: 'closeTab' });
     }
 }
 
-function performLauncherPageLogic(settings: AppSettings, onSuccess?: () => void) {
+function performLauncherPageLogic(settings: AppSettings) {
     console.log('[performLauncherPageLogic] Starting observation...');
     remoteLog('performLauncherPageLogic', 'Observation started');
 
@@ -473,12 +449,6 @@ function performLauncherPageLogic(settings: AppSettings, onSuccess?: () => void)
 
             safeClick(btnEl);
 
-            // Handle success callback (e.g., closing tab)
-            if (onSuccess) {
-                console.log('[performLauncherPageLogic] Success callback triggered.');
-                onSuccess();
-            }
-
             // Note: We NO LONGER close the tab here. We wait for Completion.
             console.log('Launcher Button Clicked. Logic continues...');
             remoteLog('performLauncherPageLogic', 'Button Clicked.');
@@ -508,6 +478,11 @@ function performLauncherPageLogic(settings: AppSettings, onSuccess?: () => void)
                     'performLauncherPageLogic',
                     `No match found among buttons: ${buttonInfo}`
                 );
+
+                console.log(
+                    '[performLauncherPageLogic] Mismatch detected. Triggering Smart Timeout (2s)...'
+                );
+                chrome.runtime.sendMessage({ action: 'notifyMismatchDetected' });
             }
         }
         return false;
@@ -649,5 +624,16 @@ function manageIntroModal(preferTodayClose: boolean) {
 }
 
 // Entry Point
-const settings = await loadSettings();
-dispatchPageLogic(settings);
+(async () => {
+    try {
+        console.log('[Content] Script Entry Point Started');
+        console.log('[Content] Hash at load:', globalThis.location.hash);
+
+        const settings = await loadSettings();
+        console.log('[Content] Settings loaded:', settings);
+
+        dispatchPageLogic(settings);
+    } catch (e) {
+        console.error('[Content] CRITICAL ERROR during initialization:', e);
+    }
+})();

@@ -139,3 +139,10 @@ Node.js 및 TypeScript 표준 컨벤션을 따릅니다.
     2. `.vscode/tasks.json`을 통해 프로젝트 오픈 시 자동으로 `setup` 스크립트를 실행하고 개발 서버를 띄우도록 설정함.
 - **Status**: Accepted
 - **Date**: 2026-01-04
+
+### ADR-004: Mandatory Build Verification
+
+- **Context**: 코드 수정 후 빌드 안정성을 보장하기 위해 즉각적인 검증이 필요함.
+- **Decision**: 코드를 수정한 후에는 반드시 `npm run zip` 및 `npm run zip:firefox` 명령어를 실행하여 빌드 및 패키징이 정상적으로 이루어지는지 검증해야 함.
+- **Status**: Accepted
+- **Date**: 2026-01-06
