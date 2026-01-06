@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.7](https://github.com/NERDHEAD-lab/POE2-quick-launch-for-kakao/compare/1.2.6...1.2.7) (2026-01-06)
+
+
+### Bug Fixes
+
+* 자동 탭 닫기가 활성화 및 로그인이 필요한 상황 일 경우 홈페이지 텝이 닫기는 문제 수정 ([93661ca](https://github.com/NERDHEAD-lab/POE2-quick-launch-for-kakao/commit/93661ca2fba816cbee857223e82c0ffc679f0abd))
+
 ## [1.2.6](https://github.com/NERDHEAD-lab/POE2-quick-launch-for-kakao/compare/1.2.5...1.2.6) (2026-01-06)
 
 
