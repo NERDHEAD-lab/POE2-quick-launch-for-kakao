@@ -32,6 +32,7 @@
         "zip": "npm run build && node scripts/make-zip.js",
         "test": "vitest",
         "zip:firefox": "npm run build && node scripts/make-zip-firefox.js",
+        "package": "node scripts/package.js",
         "lint": "eslint src scripts --ext .ts,.js",
         "format": "prettier --write .",
         "prepare": "husky",
