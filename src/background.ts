@@ -32,47 +32,10 @@ chrome.runtime.onInstalled.addListener((details) => {
     }
 });
 
+let mismatchTimerId: any = null;
+
 chrome.runtime.onMessage.addListener((request: MessageRequest, sender, sendResponse) => {
     console.log('Background received message:', request, 'from sender:', sender);
-
-    if (request.action === 'closeTab') {
-        const tabId = sender.tab?.id;
-        if (tabId) {
-            console.log('[Background] Received closeTab signal. Closing current tab in 1s:', tabId);
-            setTimeout(() => {
-                chrome.tabs.remove(tabId, () => {
-                    if (chrome.runtime.lastError) {
-                        console.warn(
-                            '[Background] Failed to close tab (maybe already closed):',
-                            chrome.runtime.lastError
-                        );
-                    } else {
-                        console.log('[Background] Launcher tab closed successfully.');
-                    }
-                });
-            }, 1000);
-        }
-    } else if (request.action === 'delayedCloseTab') {
-        const tabId = sender.tab?.id;
-        if (tabId) {
-            console.log(
-                '[Background] Received delayedCloseTab signal. Closing current tab in 2s:',
-                tabId
-            );
-            setTimeout(() => {
-                chrome.tabs.remove(tabId, () => {
-                    if (chrome.runtime.lastError) {
-                        console.warn(
-                            '[Background] Failed to close tab (maybe already closed):',
-                            chrome.runtime.lastError
-                        );
-                    } else {
-                        console.log('[Background] Launcher tab closed via delayedCloseTab.');
-                    }
-                });
-            }, 2000);
-        }
-    }
 
     if (request.action === 'registerMainTab') {
         if (sender.tab?.id) {
@@ -80,37 +43,31 @@ chrome.runtime.onMessage.addListener((request: MessageRequest, sender, sendRespo
             console.log('[Background] Registered Main Game Tab ID:', sender.tab.id);
         }
     } else if (request.action === 'closeMainTab') {
-        chrome.storage.session.get(['mainGameTabId'], (result) => {
-            const tabId = result['mainGameTabId'] as number | undefined;
-            if (!tabId) {
-                console.warn('[Background] received closeMainTab but no ID found in session.');
-                return;
-            }
+        closeMainTabWithDelay(2000);
+    } else if (request.action === 'notifyMismatchDetected') {
+        console.log('[Background] Mismatch detected. Starting 2s timer for Main Tab closure...');
 
-            console.log('[Background] Received closeMainTab signal. Closing tab in 1s:', tabId);
+        if (mismatchTimerId !== null) clearTimeout(mismatchTimerId);
 
-            setTimeout(() => {
-                chrome.tabs.remove(tabId, () => {
-                    const err = chrome.runtime.lastError;
-                    if (err)
-                        console.warn(
-                            '[Background] Failed to close tab (maybe already closed):',
-                            err
-                        );
-                    else console.log('[Background] Main Game Tab closed successfully.');
-
-                    // Cleanup session storage
-                    chrome.storage.session.remove('mainGameTabId');
-                });
-            }, 1000);
-        });
+        mismatchTimerId = setTimeout(() => {
+            console.log(
+                '[Background] Mismatch Timer Expired. No other handler took over. Closing Main Tab.'
+            );
+            closeMainTabWithDelay(2000);
+            mismatchTimerId = null;
+        }, 2000);
+    } else if (request.action === 'notifyHandlerTriggered') {
+        if (mismatchTimerId !== null) {
+            console.log('[Background] Handler triggered! Cancelling Mismatch Timer.');
+            clearTimeout(mismatchTimerId);
+            mismatchTimerId = null;
+        }
     }
 
     // -----------------------------------------------------------------------------
     // Proxy Handlers for Patch Butler Integration (PNA Bypass)
     // -----------------------------------------------------------------------------
     if (request.action === 'proxyVerify') {
-        // [Goal] Check if local tool is running
         const port = request.port;
         if (!port) return;
 
@@ -118,7 +75,7 @@ chrome.runtime.onMessage.addListener((request: MessageRequest, sender, sendRespo
             .then((res) => res.json())
             .then((data) => sendResponse({ success: true, data }))
             .catch((err) => sendResponse({ success: false, error: err.toString() }));
-        return true; // Async response
+        return true;
     }
 
     if (request.action === 'proxyEnableAutoLaunch') {
@@ -131,7 +88,7 @@ chrome.runtime.onMessage.addListener((request: MessageRequest, sender, sendRespo
                 else sendResponse({ success: false, error: `Status: ${res.status}` });
             })
             .catch((err) => sendResponse({ success: false, error: err.toString() }));
-        return true; // Async response
+        return true;
     }
 
     if (request.action === 'proxyAck') {
@@ -144,7 +101,7 @@ chrome.runtime.onMessage.addListener((request: MessageRequest, sender, sendRespo
                 else sendResponse({ success: false, error: `Status: ${res.status}` });
             })
             .catch((err) => sendResponse({ success: false, error: err.toString() }));
-        return true; // Async response
+        return true;
     }
 
     if (request.action === 'remoteLog' && request.logData) {
@@ -155,7 +112,6 @@ chrome.runtime.onMessage.addListener((request: MessageRequest, sender, sendRespo
         console.log(`${logPrefix} Referrer: ${referrer}`);
         if (message) console.log(`${logPrefix} Message: ${message}`);
 
-        // Forward to Main Tab if exists
         chrome.storage.session.get(['mainGameTabId'], (result) => {
             const tabId = result['mainGameTabId'] as number | undefined;
             if (tabId) {
@@ -164,10 +120,30 @@ chrome.runtime.onMessage.addListener((request: MessageRequest, sender, sendRespo
                         action: 'forwardLog',
                         logData: request.logData
                     })
-                    .catch(() => {
-                        // Ignore errors if the tab is not in a state to receive messages
-                    });
+                    .catch(() => {});
             }
         });
     }
 });
+
+// Helper for closing Main Tab
+function closeMainTabWithDelay(delayMs: number) {
+    chrome.storage.session.get(['mainGameTabId'], (result) => {
+        const tabId = result['mainGameTabId'] as number | undefined;
+        if (!tabId) {
+            console.warn('[Background] No Main Game Tab ID found to close.');
+            return;
+        }
+
+        console.log(`[Background] Closing Main Game Tab (${tabId}) in ${delayMs}ms...`);
+        setTimeout(() => {
+            chrome.tabs.remove(tabId, () => {
+                const err = chrome.runtime.lastError;
+                if (err) console.warn('[Background] Failed to close tab:', err);
+                else console.log('[Background] Main Game Tab closed successfully.');
+
+                chrome.storage.session.remove('mainGameTabId');
+            });
+        }, delayMs);
+    });
+}

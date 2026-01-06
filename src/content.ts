@@ -229,6 +229,7 @@ const SecurityCenterHandler: PageHandler = {
     allowedReferrers: ['pubsvc.game.daum.net', 'accounts.kakao.com', 'kauth.kakao.com'],
     execute: (_settings) => {
         console.log(`[Handler Execute] ${SecurityCenterHandler.description}`);
+        chrome.runtime.sendMessage({ action: 'notifyHandlerTriggered' });
         performSecurityPageLogic();
     }
 };
@@ -251,6 +252,7 @@ const LauncherCompletionHandler: PageHandler = {
     allowedReferrers: ['security-center.game.daum.net', 'pubsvc.game.daum.net'],
     execute: (settings) => {
         console.log(`[Handler Execute] ${LauncherCompletionHandler.description}`);
+        chrome.runtime.sendMessage({ action: 'notifyHandlerTriggered' });
 
         // 1. Process Completion (Signal Close Tab, Update Tutorial Mode) - execute FIRST
         handleCompletionPage(settings);
@@ -262,14 +264,17 @@ const LauncherCompletionHandler: PageHandler = {
 
 // Priority list (order matters)
 const HANDLERS: PageHandler[] = [
+    // 홈페이지 헨들러
     PoeMainHandler,
     Poe2MainHandler,
-    LauncherCheckHandler,
+    // 로그인 하지 않을 경우에만 동작하는 헨들러
+    LauncherCheckHandler, //로그인 되었을 경우에는 팝업이 발생은 하지만 알아서 처리됨. 플러그인에서는 관여 X
     DaumLoginHandler,
     KakaoManualLoginHandler,
     KakaoAuthHandler,
-    SecurityCenterHandler,
-    LauncherCompletionHandler
+    // 게임 시작에 관여하는 헨들러
+    SecurityCenterHandler, // 지정 PC 사용 여부 확인
+    LauncherCompletionHandler // 게임 실행
 ];
 
 // -----------------------------------------------------------------------------
@@ -385,11 +390,9 @@ function handleCompletionPage(settings: AppSettings) {
         // Once completed, popup permission IS granted (presumably).
         // But for safety/feedback, let's keep it open this one time.
     } else if (settings.closeTab) {
-        console.log('Closing Main & Launcher Tabs (as per settings)...');
+        console.log('Closing Main Tab (as per settings)...');
         // Close the homepage
         chrome.runtime.sendMessage({ action: 'closeMainTab' });
-        // Close the launcher/completion page
-        chrome.runtime.sendMessage({ action: 'closeTab' });
     }
 }
 
@@ -476,10 +479,10 @@ function performLauncherPageLogic(settings: AppSettings) {
                     `No match found among buttons: ${buttonInfo}`
                 );
 
-                console.warn(
-                    '[performLauncherPageLogic] Mismatch detected. Triggering delayed tab close (2s)...'
+                console.log(
+                    '[performLauncherPageLogic] Mismatch detected. Triggering Smart Timeout (2s)...'
                 );
-                chrome.runtime.sendMessage({ action: 'delayedCloseTab' });
+                chrome.runtime.sendMessage({ action: 'notifyMismatchDetected' });
             }
         }
         return false;
