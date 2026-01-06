@@ -189,6 +189,7 @@ const DaumLoginHandler: PageHandler = {
     allowedReferrers: ['pubsvc.game.daum.net'],
     execute: (_settings) => {
         console.log(`[Handler Execute] ${DaumLoginHandler.description}`);
+        chrome.runtime.sendMessage({ action: 'notifyHandlerTriggered' });
         const kakaoLoginBtn = document.querySelector(SELECTORS.LOGIN_DAUM.BTN_KAKAO_LOGIN);
         if (kakaoLoginBtn) {
             console.log('Found "Kakao Login" button. Clicking...');
