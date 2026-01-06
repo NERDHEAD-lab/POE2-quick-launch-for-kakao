@@ -20,5 +20,8 @@
         }
     ],
     labels: ['dependencies'],
-    commitMessagePrefix: 'chore(deps): '
+    commitMessagePrefix: 'chore(deps): ',
+    assignees: ['NERDHEAD-lab'],
+    stabilityDays: 3,
+    prConcurrentLimit: 10
 }
