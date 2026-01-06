@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.6](https://github.com/NERDHEAD-lab/POE2-quick-launch-for-kakao/compare/1.2.5...1.2.6) (2026-01-06)
+
+
+### Bug Fixes
+
+* 게임 자동 실행 및 자동 탭 닫기 기능이 원활하지 않은 문제 수정 - 2 ([ce7049f](https://github.com/NERDHEAD-lab/POE2-quick-launch-for-kakao/commit/ce7049f805cbb4df5b43d2d60347c297c760bc53))
+
 ## [1.2.5](https://github.com/NERDHEAD-lab/POE2-quick-launch-for-kakao/compare/1.2.4...1.2.5) (2026-01-06)
 
 
