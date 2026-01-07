@@ -385,12 +385,10 @@ function handleCompletionPage(settings: AppSettings) {
     if (settings.isTutorialMode) {
         console.log('Tutorial Mode: OFF. Future runs will auto-close.');
         chrome.storage.local.set({ [STORAGE_KEYS.IS_TUTORIAL_MODE]: false });
-        // NOTE: In Tutorial Mode, we do NOT close the tab even on completion,
-        // so the user can clearly see "Run Completed" and check their browser settings if needed.
-        // OR should we close it? User requirement was "Don't close to allow popup permission".
-        // Once completed, popup permission IS granted (presumably).
-        // But for safety/feedback, let's keep it open this one time.
-    } else if (settings.closeTab) {
+        return;
+    }
+
+    if (settings.closeTab) {
         console.log('Closing Main Tab (as per settings)...');
         // Close the homepage
         chrome.runtime.sendMessage({ action: 'closeMainTab' });
@@ -480,12 +478,10 @@ function performLauncherPageLogic(settings: AppSettings) {
                     `No match found among buttons: ${buttonInfo}`
                 );
 
-                if (settings.closeTab) {
-                    console.log(
-                        '[performLauncherPageLogic] Mismatch detected. Triggering Smart Timeout (2s)...'
-                    );
-                    chrome.runtime.sendMessage({ action: 'notifyMismatchDetected' });
-                }
+                console.log(
+                    '[performLauncherPageLogic] Mismatch detected. Triggering Smart Timeout (2s)...'
+                );
+                chrome.runtime.sendMessage({ action: 'notifyMismatchDetected' });
             }
         }
         return false;
