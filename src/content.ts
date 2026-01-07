@@ -622,9 +622,38 @@ function manageIntroModal(preferTodayClose: boolean) {
     setTimeout(() => clearInterval(interval), 10000);
 }
 
+// -----------------------------------------------------------------------------
+// Context Lifecycle Management
+// -----------------------------------------------------------------------------
+
+function startContextHeartbeat() {
+    setInterval(() => {
+        // 1. Basic Check: Runtime Object presence
+        if (!chrome.runtime?.id) {
+            console.warn(
+                '[Content] Extension Runtime ID missing. Context invalidated. Reloading...'
+            );
+            globalThis.location.reload();
+            return;
+        }
+
+        // 2. Deep Check: Try accessing a standard API
+        try {
+            chrome.runtime.getURL('');
+        } catch (e) {
+            console.warn(
+                '[Content] Extension Context Invalidated (API access failed). Reloading...',
+                e
+            );
+            globalThis.location.reload();
+        }
+    }, 1000);
+}
+
 // Entry Point
 (async () => {
     try {
+        startContextHeartbeat();
         console.log('[Content] Script Entry Point Started');
         console.log('[Content] Hash at load:', globalThis.location.hash);
 
