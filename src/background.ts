@@ -1,3 +1,4 @@
+import { loadSettings, STORAGE_KEYS } from './storage';
 import { MessageRequest } from './types/message';
 
 // Message types
@@ -45,16 +46,23 @@ chrome.runtime.onMessage.addListener((request: MessageRequest, sender, sendRespo
     } else if (request.action === 'closeMainTab') {
         closeMainTabWithDelay(2000);
     } else if (request.action === 'notifyMismatchDetected') {
-        console.log('[Background] Mismatch detected. Starting 2s timer for Main Tab closure...');
-
         if (mismatchTimerId !== null) clearTimeout(mismatchTimerId);
 
         mismatchTimerId = setTimeout(() => {
-            console.log(
-                '[Background] Mismatch Timer Expired. No other handler took over. Closing Main Tab.'
-            );
-            closeMainTabWithDelay(2000);
-            mismatchTimerId = null;
+            loadSettings().then((settings) => {
+                if (settings.isTutorialMode) {
+                    console.log('Tutorial Mode: OFF. Future runs will auto-close.');
+                    chrome.storage.local.set({ [STORAGE_KEYS.IS_TUTORIAL_MODE]: false });
+                }
+                if (!settings.closeTab) {
+                    return;
+                }
+                console.log(
+                    '[Background] Mismatch Timer Expired. No other handler took over. Closing Main Tab.'
+                );
+                closeMainTabWithDelay(2000);
+                mismatchTimerId = null;
+            });
         }, 2000);
     } else if (request.action === 'notifyHandlerTriggered') {
         if (mismatchTimerId !== null) {
