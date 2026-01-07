@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.8](https://github.com/NERDHEAD-lab/POE2-quick-launch-for-kakao/compare/1.2.7...1.2.8) (2026-01-07)
+
+
+### Bug Fixes
+
+* 신규 사용자가 지정 PC이외의 환경에서 게임을 실행해도 "자동 실행 후 탭 닫기" 버튼을 활성화 할 수 없는 문제 수정 ([7683997](https://github.com/NERDHEAD-lab/POE2-quick-launch-for-kakao/commit/7683997ed1e1f70cc77f2215c64b69ebdfff3f7d))
+
 ## [1.2.7](https://github.com/NERDHEAD-lab/POE2-quick-launch-for-kakao/compare/1.2.6...1.2.7) (2026-01-06)
 
 
