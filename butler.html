@@ -164,6 +164,12 @@
     const countdownEl = document.getElementById('countdown');
     const installBtn = document.getElementById('installBtn');
 
+    // [Check Browser] Change Link for Firefox
+    const isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
+    if (isFirefox && installBtn) {
+        installBtn.href = "https://addons.mozilla.org/ko/firefox/addon/poe-poe2-%EB%B9%A0%EB%A5%B8-%EC%8B%A4%ED%96%89-kakao/";
+    }
+
 
     // [Check 1] Mandatory URL Parameter Check
     const urlParams = new URLSearchParams(window.location.search);
