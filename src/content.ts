@@ -2,6 +2,7 @@ import { BUTLER_PARAMS } from './constants';
 import { SELECTORS } from './domSelectors';
 import { loadSettings, AppSettings, STORAGE_KEYS } from './storage';
 import { LogData } from './types/message';
+import { startContextHeartbeat } from './utils/context';
 import { safeClick, observeAndInteract } from './utils/dom';
 
 console.log('POE / POE2 Quick Launch Content Script Loaded');
@@ -723,29 +724,7 @@ function manageIntroModal(preferTodayClose: boolean) {
 // Context Lifecycle Management
 // -----------------------------------------------------------------------------
 
-function startContextHeartbeat() {
-    setInterval(() => {
-        // 1. Basic Check: Runtime Object presence
-        if (!chrome.runtime?.id) {
-            console.warn(
-                '[Content] Extension Runtime ID missing. Context invalidated. Reloading...'
-            );
-            globalThis.location.reload();
-            return;
-        }
-
-        // 2. Deep Check: Try accessing a standard API
-        try {
-            chrome.runtime.getURL('');
-        } catch (e) {
-            console.warn(
-                '[Content] Extension Context Invalidated (API access failed). Reloading...',
-                e
-            );
-            globalThis.location.reload();
-        }
-    }, 1000);
-}
+// Import shared heartbeat
 
 // Entry Point
 (async () => {

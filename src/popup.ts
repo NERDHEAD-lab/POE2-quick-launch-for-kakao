@@ -16,6 +16,7 @@ import {
     AppSettings,
     BrowserType
 } from './storage';
+import { startContextHeartbeat } from './utils/context';
 import { extractThemeColors, applyThemeColors } from './utils/theme';
 
 // Assets
@@ -590,6 +591,11 @@ launchBtn.addEventListener('click', async (e) => {
         if (isClosePopupFn) window.close();
     });
 });
+
+// Shared utils
+
+// Initialize context heartbeat for dev reloading
+startContextHeartbeat();
 
 document.addEventListener('DOMContentLoaded', async () => {
     // Detect Browser first
