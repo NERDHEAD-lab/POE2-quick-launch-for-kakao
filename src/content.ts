@@ -295,7 +295,7 @@ const KakaoSimpleLoginHandler: PageHandler = {
                 if (!itemContainer) return;
 
                 const emailEl = itemContainer.querySelector('.tit_profile');
-                if (emailEl && emailEl.textContent) {
+                if (emailEl?.textContent) {
                     const email = emailEl.textContent.trim();
                     console.log(`[Plugin] Remembering selection: ${email}`);
                     chrome.storage.local.set({ [STORAGE_KEYS.KAKAO_SIMPLE_LOGIN_ID]: email });
@@ -562,25 +562,20 @@ function performLauncherPageLogic(settings: AppSettings) {
 
             if (obs) obs.disconnect();
             return true;
-        } else {
+        } else if (buttons.length > 0) {
             // Log when buttons are found but none match our game start criteria
-            if (buttons.length > 0) {
-                const buttonInfo = buttons
-                    .map((b) => `[${(b as HTMLElement).innerText?.trim()}]`)
-                    .join(', ');
-                console.log(
-                    `[performLauncherPageLogic] Found ${buttons.length} buttons but none matched: ${buttonInfo}`
-                );
-                remoteLog(
-                    'performLauncherPageLogic',
-                    `No match found among buttons: ${buttonInfo}`
-                );
+            const buttonInfo = buttons
+                .map((b) => `[${(b as HTMLElement).innerText?.trim()}]`)
+                .join(', ');
+            console.log(
+                `[performLauncherPageLogic] Found ${buttons.length} buttons but none matched: ${buttonInfo}`
+            );
+            remoteLog('performLauncherPageLogic', `No match found among buttons: ${buttonInfo}`);
 
-                console.log(
-                    '[performLauncherPageLogic] Mismatch detected. Triggering Smart Timeout (2s)...'
-                );
-                chrome.runtime.sendMessage({ action: 'notifyMismatchDetected' });
-            }
+            console.log(
+                '[performLauncherPageLogic] Mismatch detected. Triggering Smart Timeout (2s)...'
+            );
+            chrome.runtime.sendMessage({ action: 'notifyMismatchDetected' });
         }
         return false;
     });
@@ -724,20 +719,16 @@ function manageIntroModal(preferTodayClose: boolean) {
 // Context Lifecycle Management
 // -----------------------------------------------------------------------------
 
-// Import shared heartbeat
-
 // Entry Point
-(async () => {
-    try {
-        startContextHeartbeat();
-        console.log('[Content] Script Entry Point Started');
-        console.log('[Content] Hash at load:', globalThis.location.hash);
+try {
+    startContextHeartbeat();
+    console.log('[Content] Script Entry Point Started');
+    console.log('[Content] Hash at load:', globalThis.location.hash);
 
-        const settings = await loadSettings();
-        console.log('[Content] Settings loaded:', settings);
+    const settings = await loadSettings();
+    console.log('[Content] Settings loaded:', settings);
 
-        dispatchPageLogic(settings);
-    } catch (e) {
-        console.error('[Content] CRITICAL ERROR during initialization:', e);
-    }
-})();
+    dispatchPageLogic(settings);
+} catch (e) {
+    console.error('[Content] CRITICAL ERROR during initialization:', e);
+}
