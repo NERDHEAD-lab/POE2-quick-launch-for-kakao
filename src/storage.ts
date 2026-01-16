@@ -32,6 +32,7 @@ export interface AppSettings {
     cachedThemeColors: Record<string, ThemeColors>;
     selectedGame: GameType;
     isTutorialMode: boolean;
+    kakaoSimpleLoginId?: string;
 }
 
 export const STORAGE_KEYS = {
@@ -43,7 +44,8 @@ export const STORAGE_KEYS = {
     CACHED_PATCH_NOTES: 'cachedPatchNotes',
     CACHED_NOTICES: 'cachedNotices',
     CACHED_THEME_COLORS: 'cachedThemeColors',
-    IS_TUTORIAL_MODE: 'isTutorialMode'
+    IS_TUTORIAL_MODE: 'isTutorialMode',
+    KAKAO_SIMPLE_LOGIN_ID: 'kakaoSimpleLoginId'
 } as const;
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -55,7 +57,8 @@ export const DEFAULT_SETTINGS: AppSettings = {
     cachedNotices: [],
     cachedThemeColors: {},
     selectedGame: 'poe2',
-    isTutorialMode: false
+    isTutorialMode: false,
+    kakaoSimpleLoginId: undefined
 };
 
 /**
@@ -88,7 +91,10 @@ export async function loadSettings(): Promise<AppSettings> {
                     DEFAULT_SETTINGS.selectedGame,
                 isTutorialMode:
                     (result[STORAGE_KEYS.IS_TUTORIAL_MODE] as boolean) ??
-                    DEFAULT_SETTINGS.isTutorialMode
+                    DEFAULT_SETTINGS.isTutorialMode,
+                kakaoSimpleLoginId:
+                    (result[STORAGE_KEYS.KAKAO_SIMPLE_LOGIN_ID] as string) ??
+                    DEFAULT_SETTINGS.kakaoSimpleLoginId
             };
             resolve(settings);
         });
