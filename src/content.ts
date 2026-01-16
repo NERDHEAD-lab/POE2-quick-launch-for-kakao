@@ -198,13 +198,110 @@ const DaumLoginHandler: PageHandler = {
     }
 };
 
-const KakaoManualLoginHandler: PageHandler = {
-    name: 'KakaoManualLoginHandler',
-    description: 'Kakao Manual Login Page (When Not Logged In) - Manual Input Required',
-    match: (url) => url.hostname === 'accounts.kakao.com',
-    execute: (_settings) => {
-        console.log(`[Handler Execute] ${KakaoManualLoginHandler.description}`);
-        console.log('User must log in manually here. Automation paused.');
+const KakaoSimpleLoginHandler: PageHandler = {
+    name: 'KakaoSimpleLoginHandler',
+    description: 'Kakao Simple Login Page - Auto Click Saved Account or Inject UI',
+    match: (url) => url.hostname === 'accounts.kakao.com' && url.pathname.includes('/login/simple'),
+    execute: (settings) => {
+        console.log(`[Handler Execute] ${KakaoSimpleLoginHandler.description}`);
+        const savedId = settings.kakaoSimpleLoginId;
+
+        // 1. Auto-Click Logic
+        if (savedId) {
+            console.log(`Found saved Kakao ID: ${savedId}. Attempting to identify account...`);
+            // Attempt to find the account container that matches the saved ID
+            // Structure: .list_easy > li > a > ... > .tit_profile (email)
+            // We can search specifically for the .tit_profile matching the text
+            const profiles = Array.from(document.querySelectorAll('.tit_profile'));
+            const targetProfile = profiles.find((el) => el.textContent?.trim() === savedId);
+
+            if (targetProfile) {
+                console.log('Match found! Clicking matching account...');
+                // Click the clickable parent (usually the <a> tag with role='button')
+                const clickable = targetProfile.closest('a[role="button"]') as HTMLElement;
+                if (clickable) {
+                    safeClick(clickable);
+                    return; // Done
+                }
+            } else {
+                console.warn('Saved ID exists but no matching account found on screen.');
+            }
+        }
+
+        // 2. UI Injection Logic (If no auto-click happened or waiting for user)
+        console.log('Injecting "Remember Choice" Checkbox UI...');
+
+        const listEasy = document.querySelector('.list_easy');
+        if (!listEasy) {
+            console.warn('.list_easy element not found. UI injection aborted.');
+            return;
+        }
+
+        // Check if already injected
+        if (document.getElementById('plg-remember-kakao')) return;
+
+        // Create Container
+        const container = document.createElement('div');
+        container.style.cssText = `
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #f7e600; /* Kakao Yellow Background for visibility/context */
+            border-radius: 4px;
+            font-size: 13px;
+            color: #3C1E1E;
+            font-family: -apple-system, BlinkMacSystemFont, "Malgun Gothic", "맑은 고딕", sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            cursor: pointer;
+        `;
+
+        // Checkbox
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.id = 'plg-remember-kakao';
+        checkbox.style.cssText = `
+            cursor: pointer;
+            width: 16px;
+            height: 16px;
+            accent-color: #3C1E1E; /* Dark brown accent */
+        `;
+
+        // Label
+        const label = document.createElement('label');
+        label.htmlFor = 'plg-remember-kakao';
+        label.innerText =
+            '이 선택을 POE & POE2 빠른 실행 (Kakao) 플러그인이 기억하기 (설정에서 초기화 가능)';
+        label.style.cssText = 'cursor: pointer; font-weight: bold;';
+
+        container.appendChild(checkbox);
+        container.appendChild(label);
+
+        // Insert after the UL
+        listEasy.after(container);
+
+        // 3. Event Listener for Saving Choice
+        // We attach a capture listener to the list to intercept the click
+        listEasy.addEventListener(
+            'click',
+            (e) => {
+                if (!checkbox.checked) return;
+
+                const target = e.target as HTMLElement;
+                // Find the clicked profile item
+                const itemContainer = target.closest('li');
+                if (!itemContainer) return;
+
+                const emailEl = itemContainer.querySelector('.tit_profile');
+                if (emailEl && emailEl.textContent) {
+                    const email = emailEl.textContent.trim();
+                    console.log(`[Plugin] Remembering selection: ${email}`);
+                    chrome.storage.local.set({ [STORAGE_KEYS.KAKAO_SIMPLE_LOGIN_ID]: email });
+                }
+            },
+            true // Capture phase to ensure we read it before page potentially navigates
+        );
     }
 };
 
@@ -271,7 +368,7 @@ const HANDLERS: PageHandler[] = [
     // 로그인 하지 않을 경우에만 동작하는 헨들러
     LauncherCheckHandler, //로그인 되었을 경우에는 팝업이 발생은 하지만 알아서 처리됨. 플러그인에서는 관여 X
     DaumLoginHandler,
-    KakaoManualLoginHandler,
+    KakaoSimpleLoginHandler,
     KakaoAuthHandler,
     // 게임 시작에 관여하는 헨들러
     SecurityCenterHandler, // 지정 PC 사용 여부 확인

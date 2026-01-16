@@ -450,8 +450,14 @@ function renderSettings(settings: AppSettings) {
         groupDiv.className = 'control-group';
         if (item.key === 'pluginDisable') groupDiv.id = 'pluginDisableGroup';
 
-        // 1. Label Section (Text + Tooltip)
+        // 0. General Visibility Check
+        if (item.type === 'button' && item.isVisible && !item.isVisible(settings)) {
+            return; // Skip rendering
+        }
+
+        // 1. Label Section
         if (item.type === 'switch' && item.tooltip) {
+            // ... (Existing Switch Logic) ...
             const labelContainer = document.createElement('div');
             labelContainer.className = 'label-container';
 
@@ -461,31 +467,33 @@ function renderSettings(settings: AppSettings) {
 
             const tooltipWrapper = document.createElement('div');
             tooltipWrapper.className = 'tooltip-wrapper';
-
             const infoIcon = document.createElement('span');
             infoIcon.className = 'info-icon';
             infoIcon.textContent = 'i';
-
-            // Event Listeners for Global Tooltip
             const imgSrc = item.tooltip.image;
             infoIcon.addEventListener('mouseenter', () => showGlobalTooltip(infoIcon, imgSrc));
             infoIcon.addEventListener('mouseleave', () => hideGlobalTooltip());
 
             tooltipWrapper.appendChild(infoIcon);
-            // No nested popup anymore
-
             labelContainer.appendChild(labelSpan);
             labelContainer.appendChild(tooltipWrapper);
             groupDiv.appendChild(labelContainer);
         } else {
+            // Standard Label (Switch / Number / Button)
             const labelSpan = document.createElement('span');
             labelSpan.className = 'label-text';
-            labelSpan.textContent = item.label;
+
+            if (item.type === 'button' && item.getLabel) {
+                labelSpan.textContent = item.getLabel(settings);
+                labelSpan.style.fontSize = '12px'; // Default small size for button labels
+            } else {
+                labelSpan.textContent = item.label;
+            }
+
             groupDiv.appendChild(labelSpan);
         }
 
-        // ... (rest of Input Section logic remains same)
-        // 2. Input Section
+        // 2. Control/Input Section
         if (item.type === 'switch') {
             const labelSwitch = document.createElement('label');
             labelSwitch.className = 'switch';
@@ -497,20 +505,16 @@ function renderSettings(settings: AppSettings) {
             input.checked = !!initialValue;
             input.dataset.key = item.key;
 
-            // Event Listener
             input.addEventListener('change', (e) => {
-                // Intercept 'closeTab' if in Tutorial Mode
                 if (item.key === 'closeTab' && settings.isTutorialMode && input.checked) {
                     e.preventDefault();
-                    input.checked = false; // Revert UI
+                    input.checked = false;
                     showPopupToast(
                         '✋ 최초 1회 실행 후 설정할 수 있습니다!<br>(브라우저 팝업 허용 및 DaumGameStarter 확인 필요)'
                     );
                     return;
                 }
-
-                const checked = input.checked;
-                saveSetting(item.key, checked);
+                saveSetting(item.key, input.checked);
             });
 
             const slider = document.createElement('span');
@@ -536,12 +540,30 @@ function renderSettings(settings: AppSettings) {
                 let val = Number.parseInt(input.value);
                 if (val < item.min) val = item.min;
                 if (val > item.max) val = item.max;
-                input.value = val.toString(); // Reset visual value if clamped
-
+                input.value = val.toString();
                 saveSetting(item.key, val);
             });
 
             groupDiv.appendChild(input);
+        } else if (item.type === 'button') {
+            groupDiv.style.justifyContent = 'space-between'; // Ensure consistent spacing
+
+            const btn = document.createElement('button');
+            btn.textContent = item.btnText;
+            btn.className = item.styleClass || '';
+
+            btn.addEventListener('click', () => {
+                item.onClick({
+                    showToast: showPopupToast,
+                    refresh: async (): Promise<void> => {
+                        // Refresh settings logic
+                        const newSettings = await loadSettings();
+                        renderSettings(newSettings);
+                    }
+                });
+            });
+
+            groupDiv.appendChild(btn);
         }
 
         settingsContainer.appendChild(groupDiv);

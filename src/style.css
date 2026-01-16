@@ -1050,3 +1050,23 @@ body.plugin-disabled #pluginDisableGroup {
     height: 12px;
     background-color: #666;
 }
+/* Button Setting Styles */
+/* Button Setting Styles */
+.btn-delete {
+    background: #2e0f0f;
+    color: #ffcccc;
+    border: 1px solid #8b2820;
+    padding: 4px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: 'Fontin', sans-serif;
+    font-size: 11px;
+    transition: all 0.2s ease;
+}
+
+.btn-delete:hover {
+    background: #c0392b;
+    color: #ffffff;
+    border-color: #e74c3c;
+    box-shadow: 0 0 5px rgba(231, 76, 60, 0.4);
+}
