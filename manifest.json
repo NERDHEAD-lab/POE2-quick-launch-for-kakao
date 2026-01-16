@@ -22,22 +22,12 @@
     },
     "content_scripts": [
         {
-            "matches": [
-                "*://*.game.daum.net/*",
-                "*://*.daum.net/*",
-                "*://*.kakao.com/*"
-            ],
-            "js": [
-                "src/content.ts"
-            ]
+            "matches": ["*://*.game.daum.net/*", "*://*.daum.net/*", "*://*.kakao.com/*"],
+            "js": ["src/content.ts"]
         },
         {
-            "matches": [
-                "*://nerdhead-lab.github.io/*"
-            ],
-            "js": [
-                "src/content/detector.ts"
-            ]
+            "matches": ["*://nerdhead-lab.github.io/*"],
+            "js": ["src/content/detector.ts"]
         }
     ],
     "host_permissions": [
@@ -47,8 +37,5 @@
         "*://nerdhead-lab.github.io/*",
         "http://127.0.0.1/*"
     ],
-    "permissions": [
-        "storage",
-        "tabs"
-    ]
+    "permissions": ["storage", "tabs"]
 }
