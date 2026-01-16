@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.3.0](https://github.com/NERDHEAD-lab/POE2-quick-launch-for-kakao/compare/1.2.8...1.3.0) (2026-01-16)
+
+
+### Features
+
+* 간편 로그인 지원 추가 ([a24c43c](https://github.com/NERDHEAD-lab/POE2-quick-launch-for-kakao/commit/a24c43c3444129377f09e3abc794ff1217c021a8))
+* 테스트 환경 개선 ([6e05b30](https://github.com/NERDHEAD-lab/POE2-quick-launch-for-kakao/commit/6e05b30eea8bd16dc0d0a8dc7cf978fb4c8390c5))
+* 확장 플러그인 업데이트 시 일부 상황에서 동작하지 않는 현상 개선 ([b5ff8bf](https://github.com/NERDHEAD-lab/POE2-quick-launch-for-kakao/commit/b5ff8bf3193918197867b3924d8432564b142318))
+* 확장 플러그인 업데이트 시 일부 상황에서 동작하지 않는 현상 개선 - 2 ([77013e3](https://github.com/NERDHEAD-lab/POE2-quick-launch-for-kakao/commit/77013e380a67739d2255a3ed30050e50809c110c))
+
 ## [1.2.8](https://github.com/NERDHEAD-lab/POE2-quick-launch-for-kakao/compare/1.2.7...1.2.8) (2026-01-07)
 
 
