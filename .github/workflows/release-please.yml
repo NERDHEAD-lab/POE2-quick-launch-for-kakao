@@ -19,7 +19,7 @@ jobs:
             tag_name: ${{ steps.release.outputs.tag_name }}
         steps:
             - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-            - uses: googleapis/release-please-action@16a9c90856f42705d54a6fda1823352bdc62cf38 # v4.4.0
+            - uses: googleapis/release-please-action@5c625bfb5d1ff62eadeeb3772007f7f66fdcf071 # v4.4.1
               id: release
               with:
                   token: '${{ secrets.GITHUB_TOKEN }}'
@@ -38,7 +38,7 @@ jobs:
                   npm run package
 
             - name: Upload release
-              uses: softprops/action-gh-release@153bb8e04406b158c6c84fc1615b65b24149a1fe # v2.6.1
+              uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2.6.2
               if: ${{ steps.release.outputs.release_created }}
               with:
                   files: poe-poe2-quick-launch-for-kakao-*.zip
