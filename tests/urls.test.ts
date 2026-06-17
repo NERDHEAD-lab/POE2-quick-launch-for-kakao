@@ -12,12 +12,13 @@ async function checkUrl(url: string, retries = 3): Promise<boolean> {
             // Some servers block HEAD, so GET is safer for "reachability" despite bandwidth
             const res = await fetch(url, {
                 method: 'GET',
+                redirect: 'manual',
                 signal: controller.signal,
                 headers: { 'User-Agent': 'Mozilla/5.0 (Testbot)' }
             });
             clearTimeout(timeoutId);
 
-            if (res.ok) return true;
+            if (res.ok || (res.status >= 300 && res.status < 400)) return true;
             console.warn(`[Attempt ${i + 1}] Failed: ${url} (Status: ${res.status})`);
         } catch (e) {
             console.warn(`[Attempt ${i + 1}] Error: ${url}`, e);

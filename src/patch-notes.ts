@@ -49,9 +49,9 @@ export function parsePatchNotes(html: string, limit: number): PatchNote[] {
         const dateEl = row.querySelector('.postBy .post_date') as HTMLSpanElement;
 
         if (titleEl && dateEl) {
-            const title = titleEl.innerText.trim();
-            const link = `https://poe.game.daum.net${titleEl.getAttribute('href')}`;
-            const dateStr = dateEl.innerText.replace(/^, /, '').trim();
+            const title = getElementText(titleEl);
+            const link = new URL(titleEl.getAttribute('href') ?? '', EXT_URLS.POE.HOMEPAGE).href;
+            const dateStr = getElementText(dateEl).replace(/^, /, '');
 
             notes.push({
                 title,
@@ -63,6 +63,10 @@ export function parsePatchNotes(html: string, limit: number): PatchNote[] {
     }
 
     return notes;
+}
+
+function getElementText(element: Element): string {
+    return (element.textContent ?? '').trim();
 }
 
 export function getPatchNoteUrl(game: 'poe' | 'poe2'): string {
