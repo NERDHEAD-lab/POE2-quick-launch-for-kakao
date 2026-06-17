@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.3.1](https://github.com/NERDHEAD-lab/POE2-quick-launch-for-kakao/compare/1.3.0...1.3.1) (2026-06-17)
+
+
+### Bug Fixes
+
+* 카카오게임즈 URL 검증 실패 수정 ([4991017](https://github.com/NERDHEAD-lab/POE2-quick-launch-for-kakao/commit/49910172351d1c469c4b312724c47ac02ba3ddd4))
+* 카카오게임즈 홈페이지 변경 후 자동 실행 복구 ([10070ce](https://github.com/NERDHEAD-lab/POE2-quick-launch-for-kakao/commit/10070cebc3fd0805ead9a517098f141714a6a28e))
+
 ## [1.3.0](https://github.com/NERDHEAD-lab/POE2-quick-launch-for-kakao/compare/1.2.8...1.3.0) (2026-01-16)
 
 
