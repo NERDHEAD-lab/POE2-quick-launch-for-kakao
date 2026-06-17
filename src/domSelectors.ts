@@ -66,7 +66,16 @@ export const SELECTORS = {
     // -------------------------------------------------------------------------
     LOGIN_DAUM: {
         // "Kakao Login" button
-        BTN_KAKAO_LOGIN: '.login__container--btn-kakao'
+        BTN_KAKAO_LOGIN: '.login__container--btn-kakao',
+        BTN_KAKAO_LEGACY: '.link_kakao_login'
+    },
+
+    // -------------------------------------------------------------------------
+    // 4-1. Kakao Games Member Login Page (member.kakaogames.com)
+    // -------------------------------------------------------------------------
+    KAKAO_GAMES_MEMBER: {
+        BTN_KAKAO_LOGIN: 'button.btn-common.btn-type--icon.btn-type__emph3',
+        BTN_KAKAO_ICON: '.icon-kakaocapri'
     },
 
     // -------------------------------------------------------------------------

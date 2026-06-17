@@ -50,7 +50,7 @@ export function parsePatchNotes(html: string, limit: number): PatchNote[] {
 
         if (titleEl && dateEl) {
             const title = titleEl.innerText.trim();
-            const link = `https://poe.game.daum.net${titleEl.getAttribute('href')}`;
+            const link = new URL(titleEl.getAttribute('href') ?? '', EXT_URLS.POE.HOMEPAGE).href;
             const dateStr = dateEl.innerText.replace(/^, /, '').trim();
 
             notes.push({

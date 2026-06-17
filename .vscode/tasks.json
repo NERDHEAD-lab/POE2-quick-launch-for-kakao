@@ -2,19 +2,30 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "npm: install",
-            "type": "npm",
-            "script": "setup",
+            "label": "npm: install(poe-poe2-quick-launch-for-kakao)",
+            "type": "shell",
+            "command": "pwsh.exe",
+            "args": [
+                "-NoProfile",
+                "-Command",
+                "Set-Location -LiteralPath 'D:\\project_poe2\\POE2-quick-launch-for-kakao'; npm run setup"
+            ],
+            "problemMatcher": [],
             "presentation": {
                 "reveal": "silent",
                 "panel": "shared"
             }
         },
         {
-            "label": "npm: dev",
-            "type": "npm",
-            "script": "dev",
-            "dependsOn": ["npm: install"],
+            "label": "npm: dev(poe-poe2-quick-launch-for-kakao)",
+            "type": "shell",
+            "command": "pwsh.exe",
+            "args": [
+                "-NoProfile",
+                "-Command",
+                "Set-Location -LiteralPath 'D:\\project_poe2\\POE2-quick-launch-for-kakao'; npm run dev"
+            ],
+            "dependsOn": ["npm: install(poe-poe2-quick-launch-for-kakao)"],
             "detail": "Start the development server",
             "problemMatcher": [],
             "presentation": {
@@ -25,6 +36,21 @@
             "runOptions": {
                 "runOn": "folderOpen"
             }
+        },
+        {
+            "label": "npm: build(poe-poe2-quick-launch-for-kakao)",
+            "type": "shell",
+            "command": "pwsh.exe",
+            "args": [
+                "-NoProfile",
+                "-Command",
+                "Set-Location -LiteralPath 'D:\\project_poe2\\POE2-quick-launch-for-kakao'; npm run build"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": []
         }
     ]
 }

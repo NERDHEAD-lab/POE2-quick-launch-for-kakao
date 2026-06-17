@@ -2,6 +2,17 @@ import { BUTLER_PARAMS } from './constants';
 import { SELECTORS } from './domSelectors';
 import { loadSettings, AppSettings, STORAGE_KEYS } from './storage';
 import { LogData } from './types/message';
+import {
+    KAKAO_HOSTS,
+    isDaumLoginUrl,
+    isKakaoAuthUrl,
+    isKakaoGamesMemberLoginUrl,
+    isKnownKakaoReferrer,
+    isLauncherUrl,
+    isPoe2HomeUrl,
+    isPoeHomeUrl,
+    isSecurityCenterUrl
+} from './urlPolicy';
 import { startContextHeartbeat } from './utils/context';
 import { safeClick, observeAndInteract } from './utils/dom';
 
@@ -30,9 +41,31 @@ interface PageHandler {
     name: string;
     description: string;
     match: (url: URL) => boolean;
-    allowedReferrers?: string[];
+    allowedReferrers?: readonly string[];
     execute: (settings: AppSettings) => void;
 }
+
+const LAUNCHER_REFERRERS = [
+    ...KAKAO_HOSTS.poeHome,
+    ...KAKAO_HOSTS.poe2Home,
+    ...KAKAO_HOSTS.daumLogin,
+    ...KAKAO_HOSTS.member,
+    ...KAKAO_HOSTS.launcher
+];
+
+const LOGIN_REFERRERS = [...KAKAO_HOSTS.launcher];
+const KAKAO_AUTH_REFERRERS = [
+    ...KAKAO_HOSTS.daumLogin,
+    ...KAKAO_HOSTS.member,
+    ...KAKAO_HOSTS.kakaoAccount
+];
+const SECURITY_REFERRERS = [
+    ...KAKAO_HOSTS.launcher,
+    ...KAKAO_HOSTS.kakaoAccount,
+    ...KAKAO_HOSTS.kakaoAuth,
+    ...KAKAO_HOSTS.member
+];
+const COMPLETION_REFERRERS = [...KAKAO_HOSTS.securityCenter, ...KAKAO_HOSTS.launcher];
 
 // -----------------------------------------------------------------------------
 // Logging Helper
@@ -73,12 +106,12 @@ chrome.runtime.onMessage.addListener((message) => {
 const PoeMainHandler: PageHandler = {
     name: 'PoeMainHandler',
     description: 'POE1 Homepage - Auto Start',
-    match: (url) => url.hostname === 'poe.game.daum.net',
+    match: isPoeHomeUrl,
     execute: (settings) => {
         console.log(`[Handler Execute] ${PoeMainHandler.description}`);
         if (globalThis.location.hash.includes(BUTLER_PARAMS.HASH)) {
             console.log('Auto Start triggered on POE.');
-            startMainPagePolling(settings, SELECTORS.POE.BTN_GAME_START);
+            startMainPagePolling(settings, SELECTORS.POE.BTN_GAME_START, isPoeStartButton);
         }
     }
 };
@@ -86,7 +119,7 @@ const PoeMainHandler: PageHandler = {
 const Poe2MainHandler: PageHandler = {
     name: 'Poe2MainHandler',
     description: 'POE2 Homepage - Auto Start & Modal Handling',
-    match: (url) => url.hostname === 'pathofexile2.game.daum.net' && url.pathname.includes('/main'),
+    match: isPoe2HomeUrl,
     execute: (settings) => {
         console.log(`[Handler Execute] ${Poe2MainHandler.description}`);
         const shouldDismissToday = settings.closePopup;
@@ -129,7 +162,7 @@ const Poe2MainHandler: PageHandler = {
                 }
             }
 
-            startMainPagePolling(settings, SELECTORS.POE2.BTN_GAME_START);
+            startMainPagePolling(settings, SELECTORS.POE2.BTN_GAME_START, isPoe2StartButton);
         }
     }
 };
@@ -138,19 +171,14 @@ const LauncherCheckHandler: PageHandler = {
     name: 'LauncherCheckHandler',
     description: 'Launcher Game Start Check & Init Page (When Not Logged In)',
     match: (url) => {
-        if (url.hostname !== 'pubsvc.game.daum.net') return false;
+        if (!isLauncherUrl(url)) return false;
         // Check for specific game start pages (poe.html or poe2.html)
         return (
             url.pathname.includes('/gamestart/poe.html') ||
             url.pathname.includes('/gamestart/poe2.html')
         );
     },
-    allowedReferrers: [
-        'poe.game.daum.net',
-        'pathofexile2.game.daum.net',
-        'logins.daum.net',
-        'pubsvc.game.daum.net'
-    ],
+    allowedReferrers: LAUNCHER_REFERRERS,
     execute: (settings) => {
         const urlParams = new URLSearchParams(globalThis.location.search);
         const paramsObj: Record<string, string> = {};
@@ -170,7 +198,7 @@ const DaumLoginHandler: PageHandler = {
     name: 'DaumLoginHandler',
     description: 'Daum Login Check Page (When Not Logged In) - Auto Click Kakao Login',
     match: (url) => {
-        if (url.hostname !== 'logins.daum.net') return false;
+        if (!isDaumLoginUrl(url)) return false;
 
         // Verify 'url' parameter validates against LauncherCheckHandler logic (targets POE/POE2)
         const nextUrlParam = url.searchParams.get('url');
@@ -179,7 +207,7 @@ const DaumLoginHandler: PageHandler = {
         try {
             const nextUrl = new URL(decodeURIComponent(nextUrlParam)); // Decoded target URL
             return (
-                nextUrl.hostname === 'pubsvc.game.daum.net' &&
+                isLauncherUrl(nextUrl) &&
                 (nextUrl.pathname.includes('/gamestart/poe.html') ||
                     nextUrl.pathname.includes('/gamestart/poe2.html'))
             );
@@ -187,15 +215,46 @@ const DaumLoginHandler: PageHandler = {
             return false;
         }
     },
-    allowedReferrers: ['pubsvc.game.daum.net'],
+    allowedReferrers: LOGIN_REFERRERS,
     execute: (_settings) => {
         console.log(`[Handler Execute] ${DaumLoginHandler.description}`);
         chrome.runtime.sendMessage({ action: 'notifyHandlerTriggered' });
-        const kakaoLoginBtn = document.querySelector(SELECTORS.LOGIN_DAUM.BTN_KAKAO_LOGIN);
+        const kakaoLoginBtn =
+            document.querySelector(SELECTORS.LOGIN_DAUM.BTN_KAKAO_LOGIN) ||
+            document.querySelector(SELECTORS.LOGIN_DAUM.BTN_KAKAO_LEGACY);
         if (kakaoLoginBtn) {
             console.log('Found "Kakao Login" button. Clicking...');
             safeClick(kakaoLoginBtn as HTMLElement);
         }
+    }
+};
+
+const KakaoGamesMemberLoginHandler: PageHandler = {
+    name: 'KakaoGamesMemberLoginHandler',
+    description: 'Kakao Games Member Login - Auto Click Kakao Login',
+    match: isKakaoGamesMemberLoginUrl,
+    execute: (_settings) => {
+        console.log(`[Handler Execute] ${KakaoGamesMemberLoginHandler.description}`);
+        chrome.runtime.sendMessage({ action: 'notifyHandlerTriggered' });
+        observeAndInteract((obs) => {
+            const kakaoLoginBtn =
+                document.querySelector(SELECTORS.KAKAO_GAMES_MEMBER.BTN_KAKAO_LOGIN) ||
+                Array.from(document.querySelectorAll('button')).find((button) => {
+                    const text = button.textContent?.replace(/\s+/g, ' ').trim() ?? '';
+                    return (
+                        text.includes('카카오 로그인') ||
+                        text.toLowerCase().includes('kakao login') ||
+                        Boolean(button.querySelector(SELECTORS.KAKAO_GAMES_MEMBER.BTN_KAKAO_ICON))
+                    );
+                });
+
+            if (!kakaoLoginBtn) return false;
+
+            console.log('Found "Kakao Login" button. Clicking...');
+            safeClick(kakaoLoginBtn as HTMLElement);
+            if (obs) obs.disconnect();
+            return true;
+        });
     }
 };
 
@@ -309,8 +368,8 @@ const KakaoSimpleLoginHandler: PageHandler = {
 const KakaoAuthHandler: PageHandler = {
     name: 'KakaoAuthHandler',
     description: 'Kakao Auth/Continue Page (When Not Logged In) - Auto Click Agree',
-    match: (url) => url.hostname === 'kauth.kakao.com' && url.pathname.includes('/oauth/authorize'),
-    allowedReferrers: ['logins.daum.net', 'accounts.kakao.com'],
+    match: (url) => isKakaoAuthUrl(url) && url.pathname.includes('/oauth/authorize'),
+    allowedReferrers: KAKAO_AUTH_REFERRERS,
     execute: (_settings) => {
         console.log(`[Handler Execute] ${KakaoAuthHandler.description}`);
         const agreeBtn = document.querySelector(SELECTORS.KAKAO_AUTH.BTN_AGREE) as HTMLElement;
@@ -324,8 +383,8 @@ const KakaoAuthHandler: PageHandler = {
 const SecurityCenterHandler: PageHandler = {
     name: 'SecurityCenterHandler',
     description: 'Designated PC / Security Page - Auto Click Confirm',
-    match: (url) => url.hostname === 'security-center.game.daum.net',
-    allowedReferrers: ['pubsvc.game.daum.net', 'accounts.kakao.com', 'kauth.kakao.com'],
+    match: isSecurityCenterUrl,
+    allowedReferrers: SECURITY_REFERRERS,
     execute: (_settings) => {
         console.log(`[Handler Execute] ${SecurityCenterHandler.description}`);
         chrome.runtime.sendMessage({ action: 'notifyHandlerTriggered' });
@@ -341,14 +400,14 @@ const LauncherCompletionHandler: PageHandler = {
     name: 'LauncherCompletionHandler',
     description: 'Launcher Execution Confirmation Page',
     match: (url) => {
-        if (url.hostname !== 'pubsvc.game.daum.net') return false;
+        if (!isLauncherUrl(url)) return false;
         if (!url.pathname.includes('/securitycenter') || !url.pathname.includes('/completed.html'))
             return false;
 
         const gameCode = url.searchParams.get('gameCode');
         return gameCode === 'poe' || gameCode === 'poe2';
     },
-    allowedReferrers: ['security-center.game.daum.net', 'pubsvc.game.daum.net'],
+    allowedReferrers: COMPLETION_REFERRERS,
     execute: (settings) => {
         console.log(`[Handler Execute] ${LauncherCompletionHandler.description}`);
         chrome.runtime.sendMessage({ action: 'notifyHandlerTriggered' });
@@ -369,6 +428,7 @@ const HANDLERS: PageHandler[] = [
     // 로그인 하지 않을 경우에만 동작하는 헨들러
     LauncherCheckHandler, //로그인 되었을 경우에는 팝업이 발생은 하지만 알아서 처리됨. 플러그인에서는 관여 X
     DaumLoginHandler,
+    KakaoGamesMemberLoginHandler,
     KakaoSimpleLoginHandler,
     KakaoAuthHandler,
     // 게임 시작에 관여하는 헨들러
@@ -399,7 +459,7 @@ function dispatchPageLogic(settings: AppSettings) {
         // Referrer Validation
         if (handler.allowedReferrers) {
             const currentReferrer = document.referrer;
-            const isValid = handler.allowedReferrers.some((ref) => currentReferrer.includes(ref));
+            const isValid = isKnownKakaoReferrer(currentReferrer, handler.allowedReferrers);
 
             if (!isValid) {
                 console.warn(
@@ -422,13 +482,17 @@ function dispatchPageLogic(settings: AppSettings) {
 // -----------------------------------------------------------------------------
 
 // Unified Main Page Polling Logic
-function startMainPagePolling(_settings: AppSettings, buttonSelector: string) {
+function startMainPagePolling(
+    _settings: AppSettings,
+    buttonSelector: string,
+    isFallbackMatch: (element: HTMLElement) => boolean
+) {
     let attempts = 0;
     const maxAttempts = 50; // 10 seconds (50 * 200ms)
 
     const interval = setInterval(() => {
         attempts++;
-        const startBtn = document.querySelector(buttonSelector) as HTMLElement;
+        const startBtn = findMainPageStartButton(buttonSelector, isFallbackMatch);
 
         if (startBtn) {
             // Refined Cleanup - Target only butler and #autoStart
@@ -471,9 +535,58 @@ function startMainPagePolling(_settings: AppSettings, buttonSelector: string) {
 
         if (attempts >= maxAttempts) {
             clearInterval(interval);
-            console.log(`Stopped polling for Start Button (${buttonSelector}). Not found.`);
+            console.log(
+                `Stopped polling for Start Button (${buttonSelector}). Not found. Candidates: ${describeClickableCandidates()}`
+            );
         }
     }, 200);
+}
+
+function findMainPageStartButton(
+    buttonSelector: string,
+    isFallbackMatch: (element: HTMLElement) => boolean
+): HTMLElement | null {
+    const selectorMatch = document.querySelector(buttonSelector);
+    if (selectorMatch) return selectorMatch as HTMLElement;
+
+    const fallbackMatch = Array.from(document.querySelectorAll<HTMLElement>('a, button')).find(
+        isFallbackMatch
+    );
+    return fallbackMatch ?? null;
+}
+
+function isPoeStartButton(element: HTMLElement): boolean {
+    if (element.id === 'signupButton') return true;
+    if ((element.getAttribute('onclick') ?? '').includes('kgPoe.launch')) return true;
+
+    return normalizeText(element).includes('지금 무료로 플레이하기');
+}
+
+function isPoe2StartButton(element: HTMLElement): boolean {
+    if (element.classList.contains('main-start__link')) return true;
+
+    const text = normalizeText(element);
+    return text === '게임 시작' || text === '게임시작';
+}
+
+function normalizeText(element: HTMLElement): string {
+    return (element.innerText || element.textContent || '').replace(/\s+/g, ' ').trim();
+}
+
+function describeClickableCandidates(): string {
+    return Array.from(document.querySelectorAll('a, button'))
+        .slice(0, 20)
+        .map((element) => {
+            const htmlElement = element as HTMLElement;
+            const text = normalizeText(htmlElement);
+            const id = htmlElement.id ? `#${htmlElement.id}` : '';
+            const className =
+                typeof htmlElement.className === 'string' && htmlElement.className
+                    ? `.${htmlElement.className.trim().replace(/\s+/g, '.')}`
+                    : '';
+            return `${htmlElement.tagName.toLowerCase()}${id}${className}[${text}]`;
+        })
+        .join(', ');
 }
 
 function handleCompletionPage(settings: AppSettings) {

@@ -25,6 +25,7 @@
             "matches": [
                 "*://*.game.daum.net/*",
                 "*://*.daum.net/*",
+                "*://*.kakaogames.com/*",
                 "*://*.kakao.com/*"
             ],
             "js": [
@@ -43,6 +44,7 @@
     "host_permissions": [
         "*://*.game.daum.net/*",
         "*://*.daum.net/*",
+        "*://*.kakaogames.com/*",
         "*://*.kakao.com/*",
         "*://nerdhead-lab.github.io/*",
         "http://127.0.0.1/*"
