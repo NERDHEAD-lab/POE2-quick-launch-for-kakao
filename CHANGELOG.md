@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.2](https://github.com/NERDHEAD-lab/POE2-quick-launch-for-kakao/compare/1.3.1...1.3.2) (2026-11-06)
+
+
+### Bug Fixes
+
+* 카카오 POE2 자동 실행 및 Chrome 스토어 ZIP 수정 ([#133](https://github.com/NERDHEAD-lab/POE2-quick-launch-for-kakao/issues/133)) ([46cc34f](https://github.com/NERDHEAD-lab/POE2-quick-launch-for-kakao/commit/46cc34f3835b198d89d228fb8a62dd170e1260b4))
+
 ## [1.3.1](https://github.com/NERDHEAD-lab/POE2-quick-launch-for-kakao/compare/1.3.0...1.3.1) (2026-06-17)
 
 
