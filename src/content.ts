@@ -162,7 +162,7 @@ const Poe2MainHandler: PageHandler = {
                 }
             }
 
-            startMainPagePolling(settings, SELECTORS.POE2.BTN_GAME_START, isPoe2StartButton);
+            startMainPagePolling(settings, SELECTORS.POE2.BTN_GAME_START);
         }
     }
 };
@@ -485,7 +485,7 @@ function dispatchPageLogic(settings: AppSettings) {
 function startMainPagePolling(
     _settings: AppSettings,
     buttonSelector: string,
-    isFallbackMatch: (element: HTMLElement) => boolean
+    isFallbackMatch?: (element: HTMLElement) => boolean
 ) {
     let attempts = 0;
     const maxAttempts = 50; // 10 seconds (50 * 200ms)
@@ -544,10 +544,11 @@ function startMainPagePolling(
 
 function findMainPageStartButton(
     buttonSelector: string,
-    isFallbackMatch: (element: HTMLElement) => boolean
+    isFallbackMatch?: (element: HTMLElement) => boolean
 ): HTMLElement | null {
     const selectorMatch = document.querySelector(buttonSelector);
     if (selectorMatch) return selectorMatch as HTMLElement;
+    if (!isFallbackMatch) return null;
 
     const fallbackMatch = Array.from(document.querySelectorAll<HTMLElement>('a, button')).find(
         isFallbackMatch
@@ -560,13 +561,6 @@ function isPoeStartButton(element: HTMLElement): boolean {
     if ((element.getAttribute('onclick') ?? '').includes('kgPoe.launch')) return true;
 
     return normalizeText(element).includes('지금 무료로 플레이하기');
-}
-
-function isPoe2StartButton(element: HTMLElement): boolean {
-    if (element.classList.contains('main-start__link')) return true;
-
-    const text = normalizeText(element);
-    return text === '게임 시작' || text === '게임시작';
 }
 
 function normalizeText(element: HTMLElement): string {
@@ -771,32 +765,11 @@ function showTutorialToast(message: string) {
 // ... (Existing Helpers continued)
 
 function manageIntroModal(preferTodayClose: boolean) {
-    if (document.cookie.includes('POE2_INTRO_MODAL=1')) {
-        console.log('Intro Modal cookie already present. Skipping modal logic.');
-        return;
-    }
-
     console.log(`Managing Intro Modal. Prefer 'Today Close': ${preferTodayClose}`);
 
-    if (preferTodayClose) {
-        try {
-            if (!document.cookie.includes('POE2_INTRO_MODAL=1')) {
-                document.cookie = 'POE2_INTRO_MODAL=1; path=/; max-age=86400';
-                console.log('Set POE2_INTRO_MODAL=1 cookie.');
-            }
-        } catch (e) {
-            console.warn('Cookie write failed:', e);
-        }
-    }
-
     const dismissAttempt = () => {
-        const introContent = document.getElementById(SELECTORS.POE2.INTRO_MODAL_ID);
-        if (!introContent) return false;
-
-        const container = introContent.closest(SELECTORS.POE2.MODAL_CONTAINER);
+        const container = document.querySelector(SELECTORS.POE2.MODAL_CONTAINER);
         if (!container) return false;
-
-        if ((container as HTMLElement).offsetParent === null) return false;
 
         if (preferTodayClose) {
             const todayBtn = container.querySelector(SELECTORS.POE2.BTN_TODAY_CLOSE);

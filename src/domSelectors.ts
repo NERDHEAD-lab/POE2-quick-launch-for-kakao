@@ -8,21 +8,17 @@ export const SELECTORS = {
     // 1. POE2 Main Page (/main)
     // -------------------------------------------------------------------------
     POE2: {
-        // The container holding the intro modal content
-        // Used to block Game Start until dismissed
-        MODAL_CONTAINER: '.modal__container',
-
-        // Specific ID to identify the correct modal (User provided)
-        INTRO_MODAL_ID: 'kgIntroModalContents',
+        // Only the active intro layer should be dismissed
+        MODAL_CONTAINER: '#layerIntro.on',
 
         // "Don't show for today" button inside the modal
-        BTN_TODAY_CLOSE: '.modal__button-block',
+        BTN_TODAY_CLOSE: '.btn_today',
 
         // General "Close" (X) button inside the modal
-        BTN_CLOSE_X: '.modal__button-x',
+        BTN_CLOSE_X: '.btn_close',
 
         // The "Game Start" button on the main page
-        BTN_GAME_START: '.main-start__link'
+        BTN_GAME_START: 'button.btn_start'
     },
 
     // -------------------------------------------------------------------------
