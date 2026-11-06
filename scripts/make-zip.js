@@ -26,15 +26,22 @@ console.log(`Creating zip file: ${fileName}`);
 
 // Find bestzip CLI script
 const bestzipCli = path.join(dir, 'node_modules', 'bestzip', 'bin', 'cli.js');
+const distDir = path.join(dir, 'dist');
+const sources = fs.readdirSync(distDir);
 
-console.log(`Executing: node ${bestzipCli} ${fileName} dist/`);
+console.log(`Executing: node ${bestzipCli} ${fileName} ${sources.join(' ')} (from dist/)`);
 
-execFile(process.execPath, [bestzipCli, fileName, 'dist/'], (error, stdout, stderr) => {
-    if (error) {
-        console.error(`Error creating zip: ${error.message}`);
-        process.exit(1);
+execFile(
+    process.execPath,
+    [bestzipCli, path.join(dir, fileName), ...sources],
+    { cwd: distDir },
+    (error, stdout, stderr) => {
+        if (error) {
+            console.error(`Error creating zip: ${error.message}`);
+            process.exit(1);
+        }
+        console.log(stdout);
+        if (stderr) console.error(stderr);
+        console.log(`Success! Created ${fileName}`);
     }
-    console.log(stdout);
-    if (stderr) console.error(stderr);
-    console.log(`Success! Created ${fileName}`);
-});
+);
