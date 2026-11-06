@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.3](https://github.com/NERDHEAD-lab/POE2-quick-launch-for-kakao/compare/1.3.2...1.3.3) (2026-11-06)
+
+
+### Bug Fixes
+
+* 불필요한 tabs 권한 제거 ([#135](https://github.com/NERDHEAD-lab/POE2-quick-launch-for-kakao/issues/135)) ([b9e9606](https://github.com/NERDHEAD-lab/POE2-quick-launch-for-kakao/commit/b9e9606ea342cd531c02f806e46393e851d69506))
+
 ## [1.3.2](https://github.com/NERDHEAD-lab/POE2-quick-launch-for-kakao/compare/1.3.1...1.3.2) (2026-11-06)
 
 
